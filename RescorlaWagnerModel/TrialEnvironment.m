@@ -1,47 +1,94 @@
 classdef TrialEnvironment
     properties
-        successProbability = 0.85;
-        conditions = {'GoToWin', 'GoToAvoidLoss', 'NoGoToWin', 'NoGoToAvoidLoss'}
+        successProb = 0.85;
+        outcomeProb = 0.8;
+        % Assuming env.conditions = {'GoToWin', 'GoToAvoidLoss', 'NoGoToWin', 'NoGoToAvoidLoss'}
+        % and actions are represented as [1, 2] for ['Go', 'NoGo']
+        conditions = {1,2,3,4}
     end
 
     methods
-        function obj = TrialEnvironment()
+        function obj = TrialEnvironment(successProb, outcomeProb)
+            % How likely is it that the correct action leads to a good
+            % outcome?
+            obj.successProb = successProb;
+            % How likely is it that the action matters?
+            obj.outcomeProb = outcomeProb;
         end
         
         function [state, correctAction] = presentTrial(obj)
-            state = randsample(obj.conditions, 1);
-            
+            stateCell = randsample(obj.conditions, 1);
+            state = stateCell{1};
             correctAction = obj.getCorrectAction(state);
         end
 
         function correctAction = getCorrectAction(obj, state)
-            if any(strcmp(state, {'GoToWin', 'GoToAvoidLoss'}))
-                correctAction = 'Go';
+            if state < 3
+                correctAction = 1;
             else
-                correctAction = 'NoGo';
+                correctAction = 2;
             end
         end
 
-        function reward = getReward(obj, state, action)
-            if endsWith(state, 'Loss') 
-                if strcmp(action, obj.getCorrectAction(state))
-                    if rand < obj.successProbability
-                        reward = 0;
+        function reward = getReward(obj, state, action, isHighControl)
+            % If it is a high control block, then in 80% or w/e of the
+            % cases, your actions matter.
+            if isHighControl
+                % This is true in obj.outcomeProb% of the cases.
+                if rand < obj.outcomeProb
+                    % This looks at whether it is loss or win.
+                    if ~mod(state, 2)
+                        if action == obj.getCorrectAction(state)
+                            % In 85% percent of the cases, the bool is 0.
+                            % Thus, you get 0 reward (or avoid loss).
+                            reward = -10 * (rand >= obj.successProb);
+                        else
+                            reward = -10;
+                        end
+                    % Win
                     else
-                        reward = -10;
+                        if action == obj.getCorrectAction(state)
+                            % In 85% percent of the cases, the bool is 1.
+                            % Then, you get 10 reward. Otherwise you get 0.
+                            reward = 10 * (rand < obj.successProb);
+                        else
+                            reward = 0;
+                        end
                     end
+                % Even in a high control block, there are trials where the
+                % outcomes do not matter.
                 else
-                    reward = -10;
+                    if ~mod(state, 2)
+                        reward = -10 * (rand >= obj.successProb);
+                    else
+                        reward = 10 * (rand < obj.successProb);
+                    end
                 end
             else
-                if strcmp(action, obj.getCorrectAction(state))
-                    if rand < obj.successProbability
-                        reward = 10;
+                % Here, it is inversed. In 20% of the cases, this is true.
+                if rand < 1 - obj.outcomeProb
+                    % Now, actions matter, even though ~isHighControl.
+                    if ~mod(state, 2)
+                        if action == obj.getCorrectAction(state)
+                            % In 85% percent of the cases, the bool is 0.
+                            % Thus, you get 0 reward (or avoid loss).
+                            reward = -10 * (rand >= obj.successProb);
+                        else
+                            reward = -10;
+                        end
                     else
-                        reward = 0;
+                        if action == obj.getCorrectAction(state)
+                            reward = 10 * (rand < obj.successProb);
+                        else
+                            reward = 0;
+                        end
                     end
                 else
-                    reward = 0;
+                    if ~mod(state, 2)
+                        reward = -10 * (rand >= obj.successProb);
+                    else
+                        reward = 10 * (rand < obj.successProb);
+                    end
                 end
             end
         end
