@@ -26,7 +26,7 @@ classdef TrialEnvironment
         end
 
         function correctAction = getCorrectAction(obj, state)
-            if state <= 2
+            if 
                 correctAction = 1;
             else
                 correctAction = 2;

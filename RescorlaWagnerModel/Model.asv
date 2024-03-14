@@ -1,0 +1,30 @@
+classdef LearningModel
+    properties
+        Q
+        P
+        epsilon
+        beta
+        rho
+    end
+
+    methods
+        function obj = LearningModel(epsilon, rho, beta)
+            obj.epsilon =epsilon;
+            obj.rho = rho;
+            obj.beta = beta;
+            obj.Q = zeros(4,2);
+            obj.P = zeros(4,2) +0.5;
+        end
+
+        function obj = calcProbs(obj,state)
+            obj.P(state, :) = beta_softmax(obj.Q(state, :), obj.beta);
+        end
+
+        function action = returnAction(~, state)
+            action = randsample([1,2], 1, true, obj.P(state, :));
+        end
+
+        function obj = updateModel(reward, state, action)
+            obj.Q(state, action) = Q(state, action) + epsilon * (obj.rho * reward - obj.Q(state, action));
+        end
+

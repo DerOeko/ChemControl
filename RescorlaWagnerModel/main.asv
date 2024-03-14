@@ -3,9 +3,9 @@ close all;
 clear all;
 
 % Initialize hyperparameters
-epsilon = 0.45;
-beta = 3;
-rho = 9;
+epsilon = 0.5;
+beta = 1;
+rho = 1;
 numTrialsInBlock = 40;
 numBlocks = 28;
 rewardProb = 0.85;
@@ -144,6 +144,31 @@ legend('GoToWin', 'GoToAvoidLoss', 'NoGoToWin', 'NoGoToAvoidLoss', 'Location', '
 title('Mean Probability of Choosing "Go" Across State Repetitions in Low Control Trials');
 hold off;
 
+
+% Where columns correspond to 'GoWin', 'GoAvoid', 'NoGoWin', and 'NoGoAvoid'
+
+% Calculate the average bias over the 10 occurrences
+HC_bias_Go = HCoccurrenceMeans(:, 1) - HCoccurrenceMeans(:, 2);
+HC_bias_NoGo = HCoccurrenceMeans(:, 4) - HCoccurrenceMeans(:, 3);
+LC_bias_Go = LCoccurrenceMeans(:, 1) - LCoccurrenceMeans(:, 2);
+LC_bias_NoGo = LCoccurrenceMeans(:, 4) - LCoccurrenceMeans(:, 3);
+
+% Combine the biases for the boxplot
+% Each row is a different condition, and each column is a separate boxplot group
+bias_data = [HC_bias_Go, LC_bias_Go, LC_bias_NoGo, HC_bias_NoGo];
+
+% Create the boxplot
+figure;
+boxplot(bias_data);
+title('Bias Modulated by Controllability');
+ylabel('Proportion of Bias');
+yline(0.5,  ":","LineWidth", 3, "Color", "#AEAEAE");
+% Custom legend
+hold on;
+h = zeros(2, 1);
+h(1) = plot(NaN,NaN,'r-');
+h(2) = plot(NaN,NaN,'b-');
+legend(h, 'Control: high','Control: low');
 % 
 % % Plotting
 % figure;
