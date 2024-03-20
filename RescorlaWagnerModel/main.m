@@ -10,72 +10,11 @@ numTrialsInBlock = 40;
 numBlocks = 28;
 rewardProb = 0.85;
 controllProb = 0.8;
+numHCBlocks = numBlocks / 2;
+numLCBlocks = numBlocks - numHCBlocks;
 
-% Matrix to store info about blocks for later analysis
-blockInfo = zeros(numBlocks, 3);
 
-% Controllability array
-numHCBlocks = numBlocks/2;
-numLCBlocks = numBlocks/2;
-
-controllabilityArray = zeros(numBlocks);
-controllabilityArray(1:numHCBlocks) = 1;
-controllabilityArray = controllabilityArray(randperm(length(controllabilityArray)));
-conditions = [1,2,3,4];
-repetitions = numTrialsInBlock/4;
-
-% Model initialization
-m = Model(epsilon, rho, beta);
-
-currentTrial = 0;
-HCprobGoMatrix = cell(numHCBlocks, 4);
-LCprobGoMatrix = cell(numHCBlocks, 4);
-highControlCount = 0;
-lowControlCount = 0;
-
-for block = 1:numBlocks
-    isHighControl = controllabilityArray(block);
-    % Store the block information including start and end trial numbers, and controllability condition
-    blockInfo(block, :) = [currentTrial + 1, currentTrial + numTrialsInBlock, isHighControl];
-    stateOneCount = 0;
-    m = m.resetP();
-    m = m.resetQ();
-
-    stateArray = repelem(conditions, repetitions);
-    stateArray = stateArray(randperm(length(stateArray)));
-    env = TrialEnvironment(rewardProb, controllProb, stateArray);
-
-    if isHighControl
-        highControlCount = highControlCount +1;
-    else
-        lowControlCount = lowControlCount +1;
-    end
-
-    % Iterate through trials within the current block
-    for trial = 1:numTrialsInBlock        
-        [state, correctAction, env] = env.presentTrial();
-
-        m = m.calcProbs(state);
-        if isHighControl
-            if isempty(HCprobGoMatrix{highControlCount, state})
-                HCprobGoMatrix{highControlCount, state} = m.returnGoProb(state);
-            else
-                HCprobGoMatrix{highControlCount, state}(end+1) = m.returnGoProb(state);
-            end
-        else
-            if isempty(LCprobGoMatrix{lowControlCount, state})
-                LCprobGoMatrix{lowControlCount, state} = m.returnGoProb(state);
-            else
-                LCprobGoMatrix{lowControlCount, state}(end+1) = m.returnGoProb(state);
-            end
-        end
-
-        action = m.returnAction(state);        
-        reward = env.getReward(state, action, isHighControl);
-        m = m.updateModel(reward, state, action);
-
-    end
-end
+[blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb);
 
 % First, you get all state == 1 in a block. the row should be block number
 % THe column should be the condition repetition, with each cell being the probability of choosing "Go" in that condition.
@@ -129,7 +68,7 @@ title('Mean Probability of Choosing "Go" Across State Repetitions In High Contro
 hold off;
 
 subplot(2,1,2);
-hold on; % Allows multiple plots on the same figure
+hold on;
 
 for state = 1:4
     plotStyle = [colors{state} lineStyles{state} markers{state}]; % Combine color, line style, and marker
@@ -143,6 +82,54 @@ yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
 legend('GoToWin', 'GoToAvoidLoss', 'NoGoToWin', 'NoGoToAvoidLoss', 'Location', 'best');
 title('Mean Probability of Choosing "Go" Across State Repetitions in Low Control Trials');
 hold off;
+
+
+% Calculate Pavlovian bias
+GoToWin_GoToAvoid_HC = HCoccurrenceMeans(:, 1) - HCoccurrenceMeans(:, 2);
+% Reasoning behind the 1-mean here:
+% Pavlovian bias (also called motivational bias) denotes that phenomenon that 
+% - reward-related cues (eliciting reward anticipation) invigorate action 
+% (lead to more active "Go" responses and speed up these Go responses) 
+% - punishment-related cues (eliciting punishment anticipation) suppress action 
+% (lead to less "Go" / more "NoGo" responses and slow down Go responses).
+% Taken from cognitive atlas.
+% With this idea, I thought that we want to show the bias in seeking
+% rewards generally, as well as the bias in avoiding losses generally.
+% The former is the mean probability across states and acrsss blocks to
+% choose "Go" in a win condition, minus the probability of choosing "Go" in
+% a loss condition. Ideally, they should be the same (i.e., an ideal learner
+% should show a Go response in either case, because it is the correct
+% action). Intuitively, this shows how much more likely we are seeking
+% rewards (we react stronger to rewards). 
+% Conversely, we want to know how much more likely we are avoiding losses.
+% So, when "NoGo" is the correct action, how much higher is the probability
+% to "NoGo" when the condition is loss than when the condition is win
+% (again, for an ideal learner, this would be 0). 
+% To compute this, we need the probability of choosing "NoGo" when the
+% setting is a loss setting and the correct action is "NoGo", and when the
+% setting is win and the correct action is "NoGo". 
+NoGoToAvoid_NoGoToWin_HC = (1-HCoccurrenceMeans(:, 4)) - (1-HCoccurrenceMeans(:, 3));
+
+% Calculate Pavlovian bias
+GoToWin_GoToAvoid_LC = LCoccurrenceMeans(:, 1) - LCoccurrenceMeans(:, 2);
+NoGoToAvoid_NoGoToWin_LC = (1-LCoccurrenceMeans(:, 4)) - (1-LCoccurrenceMeans(:, 3));
+
+% Single matrix for boxplot
+biases = [GoToWin_GoToAvoid_HC, GoToWin_GoToAvoid_LC, NoGoToAvoid_NoGoToWin_HC, NoGoToAvoid_NoGoToWin_LC];
+figure;
+boxplot(biases, 'Labels', {'GoToWin-GotoAvoid in HC', 'GoToWin-GotoAvoid in LC' 'NoGoToAvoid-NoGoToWin in HC', 'NoGoToAvoid-NoGoToWin in LC'});
+hold on;
+
+numDataPoints = size(biases, 1);
+% Create scatter plot for each group
+for i = 1:4
+    scatter(repelem(i, numDataPoints), biases(:, i), 'd', 'filled');
+end
+
+hold off;
+title('Pavlovian Bias in High and Low Control Trials');
+ylabel('Proportion of Bias');
+xlabel('Condition');
 
 % 
 % % Plotting
