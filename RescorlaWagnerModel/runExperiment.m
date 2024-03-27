@@ -29,7 +29,7 @@ function [blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(epsilon, be
 
         stateArray = repelem(conditions, repetitions);
         stateArray = stateArray(randperm(length(stateArray)));
-        env = TrialEnvironment(rewardProb, controllProb, stateArray);
+        env = TrialEnvironment(rewardProb, controllProb, stateArray, numTrialsInBlock);
 
         if isHighControl
             highControlCount = highControlCount + 1;
@@ -48,7 +48,7 @@ function [blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(epsilon, be
             end
 
             action = m.returnAction(state);
-            reward = env.getReward(state, action, isHighControl);
+            reward = env.getReward(trial, state, action, isHighControl);
             m = m.updateModel(reward, state, action);
         end
     end

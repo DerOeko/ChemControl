@@ -1,11 +1,14 @@
+%% Implementation of a Rescorla Wagner model with feedback sensitivity for Robot GoNoGo task
+% Author: Samuel Nellessen, MCC
+
 % Clear previous sessions for a clean start
 close all;
 clear all;
 
 % Initialize hyperparameters
-epsilon = 0.45;
+epsilon = 0.2;
 beta = 3;
-rho = 9;
+rho = 0.3;
 numTrialsInBlock = 40;
 numBlocks = 28;
 rewardProb = 0.85;
