@@ -1,4 +1,4 @@
-function [blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(model, epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb)
+function [blockInfo, HCprobGoMatrix, LCprobGoMatrix, stimulusSequence, outcomeVecs, successVecs, simulatedActions, correctActions] = runExperiment(model, epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb)
 
     % Matrix to store info about blocks for later analysis
     blockInfo = zeros(numBlocks, 3);
@@ -20,16 +20,24 @@ function [blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(model, epsi
     LCprobGoMatrix = cell(numBlocks - numHCBlocks, 4); % Should be numLCBlocks, if these differ
     highControlCount = 0;
     lowControlCount = 0;
+    stimulusSequence = cell(numBlocks, 1);
+    outcomeVecs = cell(numBlocks, 1);
+    successVecs = cell(numBlocks, 1);
+    simulatedActions = zeros(numBlocks, numTrialsInBlock);
+    correctActions = zeros(numBlocks, numTrialsInBlock);
+
 
     for block = 1:numBlocks
         isHighControl = controllabilityArray(block);
         blockInfo(block, :) = [currentTrial + 1, currentTrial + numTrialsInBlock, isHighControl];
-        m = m.resetP();
-        m = m.resetQ();
-
+        m = model;
         stateArray = repelem(conditions, repetitions);
         stateArray = stateArray(randperm(length(stateArray)));
         env = TrialEnvironment(rewardProb, controllProb, stateArray, numTrialsInBlock);
+        stimulusSequence{block} = stateArray;
+        outcomeVecs{block} = env.outcomeVec;
+        successVecs{block} = env.successVec;
+
 
         if isHighControl
             highControlCount = highControlCount + 1;
@@ -38,7 +46,7 @@ function [blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(model, epsi
         end
 
         for trial = 1:numTrialsInBlock
-            [state, ~, env] = env.presentTrial();
+            [state, correctAction, env] = env.presentTrial();
 
             m = m.calcProbs(state);
             if isHighControl
@@ -48,6 +56,8 @@ function [blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(model, epsi
             end
 
             action = m.returnAction(state);
+            simulatedActions(block, trial) = action;
+            correctActions(block, trial) = correctAction;
             reward = env.getReward(trial, state, action, isHighControl);
             m = m.updateModel(reward, state, action);
         end

@@ -52,28 +52,29 @@ close all;
 clear all;
 clc;
 
-lineStyles = {'-', '--', ':', '-.'}; % Example line styles
+lineStyles = {'-', '--', ':', '-.'}; % Plotting line styles
 
 % Initialize hyperparameters
 epsilon = 0.2;
 beta = 3;
-rho = 0.3;
-numTrialsInBlock = 40;
+rho = 0.1;
+numTrialsInBlock = 160;
 numBlocks = 28;
 rewardProb = 0.85;
 controllProb = 0.8;
 numHCBlocks = numBlocks / 2;
 numLCBlocks = numBlocks - numHCBlocks;
 goBias = 0.3;
+Qinit = zeros(4,2) +0.5;
 V = [0.3 -0.3 0.3 -0.3];
 Vinit = [0.3 -0.3 0.3 -0.3];
 pi = 0.3;
 
 models = {
-    Model(epsilon, rho, beta),
-    GoBiasModel(epsilon, rho, beta, goBias),
-    FixedMotivationalBiasModel(epsilon, rho, beta, goBias, V, pi),
-    DynamicMotivationalBiasModel(epsilon, rho, beta, goBias, Vinit, pi)
+    Model(epsilon, rho, beta, Qinit),
+    GoBiasModel(epsilon, rho, beta, Qinit, goBias),
+    FixedMotivationalBiasModel(epsilon, rho, beta, Qinit, goBias, V, pi),
+    DynamicMotivationalBiasModel(epsilon, rho, beta, Qinit, goBias, Vinit, pi)
 };
 
 model_names = {'Generic Model', 'Go Bias Model', 'Fixed Motivational Bias Model', 'Dynamic Motivational Bias Model'};
@@ -99,11 +100,11 @@ for i = 1:length(models)
     model = models{i};
     model_name = model_names{i};
 
-    [blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(model, epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb);
+    [blockInfo, HCprobGoMatrix, LCprobGoMatrix, ~, ~, ~, ~, ~] = runExperiment(model, epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb);
 
-    HCoccurrenceMeans = NaN(10, 4);
+    HCoccurrenceMeans = NaN(numTrialsInBlock/4, 4);
     for state = 1:4
-        for occurrence = 1:10
+        for occurrence = 1:numTrialsInBlock/4
             HCoccurrenceProbs = zeros(numHCBlocks, 1);
             for block = 1:numHCBlocks
                 HCoccurrenceProbs(block) = HCprobGoMatrix{block, state}(occurrence);
@@ -112,9 +113,9 @@ for i = 1:length(models)
         end
     end
 
-    LCoccurrenceMeans = NaN(10, 4);
+    LCoccurrenceMeans = NaN(numTrialsInBlock/4, 4);
     for state = 1:4
-        for occurrence = 1:10
+        for occurrence = 1:numTrialsInBlock/4
             LCoccurrenceProbs = zeros(numLCBlocks, 1);
             for block = 1:numLCBlocks
                 LCoccurrenceProbs(block) = LCprobGoMatrix{block, state}(occurrence);
@@ -129,16 +130,16 @@ for i = 1:length(models)
 
     for state = 1:4
         plotStyle = [lineStyles{state} ]; % Combine color, line style, and marker
-        plot(1:10, HCoccurrenceMeans(:, state)', plotStyle, 'LineWidth', 2); % Plotting mean probabilities for each state
+        plot(1:numTrialsInBlock/4, HCoccurrenceMeans(:, state)', plotStyle, 'LineWidth', 2); % Plotting mean probabilities for each state
     end
 
     xlabel('State Repetitions');
-    xlim([1.0 10.0])
+    xlim([1.0 numTrialsInBlock/4])
     ylabel('P(Go response | state)');
     ylim([0.0, 1.0])
     yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
     legend('GoToWin', 'GoToAvoidLoss', 'NoGoToWin', 'NoGoToAvoidLoss', 'Location', 'best');
-    title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions in High Control Trials', model_name));
+    title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin High Control Trials', model_name));
     grid on
     hold off;
 
@@ -147,16 +148,16 @@ for i = 1:length(models)
 
     for state = 1:4
         plotStyle = [ lineStyles{state}]; % Combine color, line style, and marker
-        plot(1:10, LCoccurrenceMeans(:, state)', plotStyle, 'LineWidth', 2); % Plotting mean probabilities for each state
+        plot(1:numTrialsInBlock/4, LCoccurrenceMeans(:, state)', plotStyle, 'LineWidth', 2); % Plotting mean probabilities for each state
     end
 
     xlabel('State Repetitions');
     ylabel('P(Go response | state)');
-    xlim([1.0 10.0])
+    xlim([1.0 numTrialsInBlock/4])
     ylim([0.0, 1.0])
     yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
     legend('GoToWin', 'GoToAvoidLoss', 'NoGoToWin', 'NoGoToAvoidLoss', 'Location', 'best');
-    title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions in Low Control Trials', model_name));
+    title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin Low Control Trials', model_name));
     grid on
     hold off;
 end

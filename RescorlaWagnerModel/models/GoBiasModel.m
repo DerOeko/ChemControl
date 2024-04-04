@@ -6,14 +6,15 @@ classdef GoBiasModel < Model
     end
 
     methods
-        function obj = GoBiasModel(epsilon, rho, beta, goBias)
+        function obj = GoBiasModel(epsilon, rho, beta, Qinit, goBias)
             arguments
                 epsilon
                 rho
                 beta
+                Qinit = zeros(4,2)
                 goBias = 0.3
             end
-            obj@Model(epsilon, rho, beta);
+            obj@Model(epsilon, rho, beta, Qinit);
 
             % Check that goBias is a scalar
             if ~isscalar(goBias)
@@ -41,7 +42,7 @@ classdef GoBiasModel < Model
         end
 
         function obj = resetQ(obj)
-            obj.Q = zeros(4,2) + 0.5;
+            obj.Q = obj.Qinit;
             obj.W(:, 1) = obj.Q(:,1) + obj.goBias;
             obj.W(:,2) = obj.Q(:,2);
         end

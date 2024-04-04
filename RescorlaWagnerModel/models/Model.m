@@ -2,6 +2,7 @@ classdef Model
     % Super class of basic rescorla wagner model
     properties
         Q
+        Qinit
         P
         epsilon
         beta
@@ -9,7 +10,7 @@ classdef Model
     end
 
     methods
-        function obj = Model(epsilon, rho, beta)
+        function obj = Model(epsilon, rho, beta, Qinit)
             arguments
                 % Initialize learning rate (epsilon) for Q-value updates
                 epsilon = 0.31
@@ -17,11 +18,14 @@ classdef Model
                 rho = 5
                 % Initialize softmax temperature (beta) for the softmax action selection
                 beta = 3
+
+                Qinit = zeros(4,2);
             end
-            obj.epsilon =epsilon;
+            obj.epsilon = epsilon;
             obj.rho = rho;
             obj.beta = beta;
-            obj.Q = zeros(4,2) + 0.5;
+            obj.Qinit = Qinit;
+            obj.Q = obj.Qinit;
             obj.P = zeros(4,2) + 0.5;
         end
 
@@ -38,7 +42,7 @@ classdef Model
         end
 
         function obj = resetQ(obj)
-            obj.Q = ones(4,2);
+            obj.Q = obj.Qinit;
         end
 
         function obj = resetP(obj)

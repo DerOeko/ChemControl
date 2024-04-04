@@ -7,17 +7,18 @@ classdef DynamicMotivationalBiasModel < GoBiasModel
     end
 
     methods
-        function obj = DynamicMotivationalBiasModel(epsilon, rho, beta, goBias, Vinit, pi)
+        function obj = DynamicMotivationalBiasModel(epsilon, rho, beta, Qinit, goBias, Vinit, pi)
             % Define default values using arguments block
             arguments
                 epsilon
                 rho
                 beta
+                Qinit = zeros(4,2)
                 goBias = 0.5
                 Vinit = [0.5 -0.5 0.5 -0.5] % Default value for V
                 pi = 0.5 % Default value for pi
             end
-            obj@GoBiasModel(epsilon, rho, beta, goBias);
+            obj@GoBiasModel(epsilon, rho, beta, Qinit, goBias);
 
             % Check that V has length matching Q's number of rows
             if length(Vinit) ~= size(obj.Q, 1)
@@ -43,7 +44,7 @@ classdef DynamicMotivationalBiasModel < GoBiasModel
         end
 
         function obj = resetQ(obj)
-            obj.Q = zeros(4,2) + 0.5;
+            obj.Q = obj.Qinit;
             obj.W(:, 1) = obj.Q(:,1) + obj.goBias + obj.V(:)*obj.pi;
             obj.W(:,2) = obj.Q(:,2);
             obj.V = obj.Vinit;

@@ -6,17 +6,18 @@ classdef FixedMotivationalBiasModel < GoBiasModel
     end
 
     methods
-        function obj = FixedMotivationalBiasModel(epsilon, rho, beta, goBias, V, pi)
+        function obj = FixedMotivationalBiasModel(epsilon, rho, beta, Qinit, goBias, V, pi)
             % Define default values using arguments block
             arguments
                 epsilon
                 rho
                 beta
+                Qinit = zeros(4,2)
                 goBias = 0.5
                 V = [0.5 -0.5 0.5 -0.5] % Default value for V
                 pi = 0.5 % Default value for pi
             end
-            obj@GoBiasModel(epsilon, rho, beta, goBias);
+            obj@GoBiasModel(epsilon, rho, beta, Qinit, goBias);
 
             % Check that V has length matching Q's number of rows
             if length(V) ~= size(obj.Q, 1)
@@ -42,7 +43,7 @@ classdef FixedMotivationalBiasModel < GoBiasModel
         end
 
         function obj = resetQ(obj)
-            obj.Q = zeros(4,2) + 0.5;
+            obj.Q = obj.Qinit;
             obj.W(:, 1) = obj.Q(:,1) + obj.goBias + obj.V(:)*obj.pi;
             obj.W(:,2) = obj.Q(:,2);
         end
