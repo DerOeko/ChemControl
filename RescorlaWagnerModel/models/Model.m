@@ -21,8 +21,8 @@ classdef Model
             obj.epsilon =epsilon;
             obj.rho = rho;
             obj.beta = beta;
-            obj.Q = ones(4,2);
-            obj.P = zeros(4,2) +0.5;
+            obj.Q = zeros(4,2) + 0.5;
+            obj.P = zeros(4,2) + 0.5;
         end
 
         function obj = calcProbs(obj,state)

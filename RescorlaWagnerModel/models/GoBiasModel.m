@@ -11,7 +11,7 @@ classdef GoBiasModel < Model
                 epsilon
                 rho
                 beta
-                goBias = 0.5
+                goBias = 0.3
             end
             obj@Model(epsilon, rho, beta);
 
@@ -21,9 +21,8 @@ classdef GoBiasModel < Model
             end
 
             obj.goBias = goBias;
-            obj.W = obj.Q;
-            obj.W(:, 1) = obj.W(:,1) + obj.goBias;
-            disp(obj.W)
+            obj.W(:, 1) = obj.Q(:,1) + obj.goBias;
+            obj.W(:, 2) = obj.Q(:,2);
         end
 
         function obj = calcProbs(obj,state)
@@ -31,18 +30,20 @@ classdef GoBiasModel < Model
         end
 
         function obj = updateModel(obj, reward, state, action)
+            % Update the Q-values
             obj.Q(state, action) = obj.Q(state, action) + obj.epsilon * (obj.rho * reward - obj.Q(state, action));
-            if action == 1
-                obj.W(state, action) = obj.Q(state,action) + obj.goBias;
-            else
-                obj.W(state,action) =obj.Q(state,action);
-            end
+        
+            % Update the W matrix
+            % For the "Go" action, update the value with the Q-value + goBias
+            obj.W(state, 1) = obj.Q(state, 1) + obj.goBias;
+            % For the "NoGo" action, update the value with the Q-value
+            obj.W(state, 2) = obj.Q(state, 2);
         end
 
         function obj = resetQ(obj)
-            obj.Q = ones(4,2);
-            obj.W(:, 1) = obj.W(:,1) + obj.goBias;
-            obj.W(:,2) = obj.Q(:,2);        
+            obj.Q = zeros(4,2) + 0.5;
+            obj.W(:, 1) = obj.Q(:,1) + obj.goBias;
+            obj.W(:,2) = obj.Q(:,2);
         end
     end
 end
