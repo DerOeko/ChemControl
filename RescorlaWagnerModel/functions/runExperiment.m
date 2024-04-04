@@ -1,4 +1,4 @@
-function [blockInfo, HCprobGoMatrix, LCprobGoMatrix, stimulusSequence, outcomeVecs, successVecs, simulatedActions, correctActions] = runExperiment(model, epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb)
+function [blockInfo, HCprobGoMatrix, LCprobGoMatrix, stimulusSequence, outcomeVecs, successVecs, simulatedActions, correctActions, controllabilityArray] = runExperiment(model, epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb)
 
     % Matrix to store info about blocks for later analysis
     blockInfo = zeros(numBlocks, 3);
@@ -11,9 +11,6 @@ function [blockInfo, HCprobGoMatrix, LCprobGoMatrix, stimulusSequence, outcomeVe
     
     conditions = [1, 2, 3, 4];
     repetitions = numTrialsInBlock / 4;
-
-    % Model initialization
-    m = model;
 
     currentTrial = 0;
     HCprobGoMatrix = cell(numHCBlocks, 4);

@@ -1,4 +1,4 @@
-function reward = determineReward(outcome, success, state, correctAction)
+function reward = determineReward(outcome, success, state, correctAction, isHighControl)
     % Calculate the reward for a given trial
             
     % Get whether the outcome matters for the current trial

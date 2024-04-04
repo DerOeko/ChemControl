@@ -29,7 +29,7 @@ classdef Model
             obj.P = zeros(4,2) + 0.5;
         end
 
-        function obj = calcProbs(obj,state)
+        function obj = calcProbs(obj, state)
             obj.P(state, :) = betaSoftmax(obj.Q(state, :), obj.beta);
         end
 

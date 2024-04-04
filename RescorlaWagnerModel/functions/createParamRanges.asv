@@ -5,9 +5,9 @@ function paramRanges = createParamRanges(epsilonRange, betaRange, rhoRange)
         rhoRange = [0.01, 5];
     end
 
-    epsilons = linspace(epsilonRange(1), epsilonRange(2), 10);
-    betas = linspace(betaRange(1), betaRange(2), 10);
-    rhos = linspace(rhoRange(1), rhoRange(2), 10);
+    epsilons = linspace(epsilonRange(1), epsilonRange(2), 5);
+    betas = linspace(betaRange(1), betaRange(2), 5);
+    rhos = linspace(rhoRange(1), rhoRange(2), 5);
 
     paramRanges = {epsilons, betas, rhos};
 
