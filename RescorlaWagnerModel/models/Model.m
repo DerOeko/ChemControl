@@ -19,7 +19,7 @@ classdef Model
                 % Initialize softmax temperature (beta) for the softmax action selection
                 beta = 3
 
-                Qinit = zeros(4,2);
+                Qinit = zeros(4,2) + 0.5;
             end
             obj.epsilon = epsilon;
             obj.rho = rho;

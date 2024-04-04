@@ -1,0 +1,27 @@
+function optimalParams = retrieveParameters(simulatedActions, stimulusSequence, outcomeVec, successVec, correctActions,modelType, paramRanges)
+    arguments
+        simulatedActions
+        stimulusSequence
+        outcomeVec
+        successVec
+        correctActions
+        modelType = "Basic";
+        % Parameter ranges
+        paramRanges = dictionary("epsilons", 0.01:0.02:0.8, "betas", 1:1:15, "rhos", 0.01:1:15)
+    end
+    
+    epsilonRange = paramRanges("epsilons");
+    betaRange = paramRanges("betas");
+    rhoRange = paramRanges("rhos");
+
+    bestParams = [];
+    bestFit = Inf;
+    
+    for epsilon = epsilonRange
+        for beta = betaRange
+            for rho = rhoRange
+                model = createModel(Qinit, Vinit, goBias, V, pi, modelType, epsilon, beta, rho);
+                negLogLikelihood = calculateFit(model, simulatedActions, stimulusSequence, outcomeVec, successVec, correctActions);
+
+                
+
