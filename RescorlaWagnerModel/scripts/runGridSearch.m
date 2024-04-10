@@ -27,6 +27,7 @@ function [accuracyMatrix, epsilonFlat, betaFlat, rhoFlat, accuracyFlat] = runGri
     results = zeros(length(epsilons), length(betas), length(rhos));
     accuracyMatrix = zeros(length(epsilons), length(betas), length(rhos));
     currentTrial = 0;
+    Qinit = zeros(4,2);
     for i = 1:length(epsilons)
         for j = 1:length(betas)
             for k = 1:length(rhos)
@@ -43,7 +44,7 @@ function [accuracyMatrix, epsilonFlat, betaFlat, rhoFlat, accuracyFlat] = runGri
                 correctAnswers = zeros(numTrialsInBlock*numBlocks, 1);
     
                 highControlAccuracies = []; % Collect accuracies for high control blocks
-                m = Model(epsilon, rho, beta);
+                m = Model(epsilon, rho, beta, Qinit);
     
                 % Begin experiment by iterating through each block
                 for block = 1:numBlocks
@@ -56,7 +57,7 @@ function [accuracyMatrix, epsilonFlat, betaFlat, rhoFlat, accuracyFlat] = runGri
                 
                     stateArray = repelem(conditions, repetitions);
                     stateArray = stateArray(randperm(length(stateArray)));
-                    env = TrialEnvironment(rewardProb, controllProb, stateArray);
+                    env = TrialEnvironment(rewardProb, controllProb, stateArray, numTrialsInBlock);
     
     
                     % Iterate through trials within the current block

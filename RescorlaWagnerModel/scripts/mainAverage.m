@@ -55,17 +55,17 @@ clc;
 lineStyles = {'-', '--', ':', '-.'}; % Plotting line styles
 
 % Initialize hyperparameters
-epsilon = 0.1;
-beta = 3;
+epsilon = 0.2;
+beta = 1;
 rho = 1;
-numTrialsInBlock = 160;
+numTrialsInBlock = 800;
 numBlocks = 8;
 rewardProb = 0.85;
 controllProb = 0.8;
 numHCBlocks = numBlocks / 2;
 numLCBlocks = numBlocks - numHCBlocks;
 goBias = 0.3;
-Qinit = zeros(4,2);
+Qinit = ones(4,2);
 V = [0.3 -0.3 0.3 -0.3];
 Vinit = [0.3 -0.3 0.3 -0.3];
 pi = 0.3;
@@ -95,7 +95,7 @@ model_names = {'Generic Model', 'Go Bias Model', 'Fixed Motivational Bias Model'
 %% Model definition
 % choose either
 % Model 1: Basic Model:
-model = Model(epsilon, rho, beta);
+%model = Model2(epsilon, rho, beta);
 
 % Model 2: Basic Model + Go Bias:
 %model = GoBiasModel(epsilon, rho, beta, goBias);
@@ -105,44 +105,53 @@ model = Model(epsilon, rho, beta);
 
 % Model 4: Basic Model + Go Bias + Dynamic Motivational Bias:
 % model = DynamicMotivationalBiasModel(epsilon, rho, beta, goBias, Vinit, pi)
+Qinits = {zeros(4,2), zeros(4,2)+0.5, ones(4,2), ones(4,2)+5};
+beta = 5;
 figure;
-model_name = "Basic";
-[HCoccurrenceMeans, LCoccurrenceMeans] = averageExperiment(numRuns, model, numTrialsInBlock, numBlocks, rewardProb, controllProb);
+for i = 1:4
+    Qinit = Qinits{i};
+    disp(Qinit)
+    model = Model2(epsilon, rho, beta, Qinit);
 
-subplot(2,1,1)
-hold on; % Allows multiple plots on the same figure
-
-for state = 1:4
-    plotStyle = [lineStyles{state} ]; % Combine color, line style, and marker
-    plot(1:numTrialsInBlock/4, HCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
+    model_name = "Basic";
+    [HCoccurrenceMeans, LCoccurrenceMeans] = averageExperiment(numRuns, model, numTrialsInBlock, numBlocks, rewardProb, controllProb);
+    
+    subplot(2,4,i)
+    hold on; % Allows multiple plots on the same figure
+    
+    for state = 1:4
+        plotStyle = [lineStyles{state} ]; % Combine color, line style, and marker
+        plot(1:numTrialsInBlock/4, HCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
+    end
+    
+    xlabel('State Repetitions');
+    xlim([1.0 numTrialsInBlock/4])
+    ylabel('P(Go response | state)');
+    ylim([0.0, 1.0])
+    yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
+    legend('G2W', 'G2A', 'NG2W', 'NG2A', 'Location', 'best');
+    title(sprintf('%s %s: \nMean P(Go|State) \n Across State Repetitions \nin High Control Trials', model_name, mat2str(Qinit)));
+    grid on
+    hold off;
+    
+    subplot(2, 4, i+4);
+    hold on;
+    
+    for state = 1:4
+        plotStyle = [ lineStyles{state}]; % Combine color, line style, and marker
+        plot(1:numTrialsInBlock/4, LCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
+    end
+    
+    xlabel('State Repetitions');
+    ylabel('P(Go response | state)');
+    xlim([1.0 numTrialsInBlock/4])
+    ylim([0.0, 1.0])
+    yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
+    title(sprintf('%s %s: \nMean P(Go|State) \n Across State Repetitions \nin Low Control Trials', model_name,mat2str(Qinit)));
+    grid on
+    hold off;
 end
 
-xlabel('State Repetitions');
-xlim([1.0 numTrialsInBlock/4])
-ylabel('P(Go response | state)');
-ylim([0.0, 1.0])
-yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
-legend('G2W', 'G2A', 'NG2W', 'NG2A', 'Location', 'best');
-title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin High Control Trials', model_name));
-grid on
-hold off;
-
-subplot(2, 1,2);
-hold on;
-
-for state = 1:4
-    plotStyle = [ lineStyles{state}]; % Combine color, line style, and marker
-    plot(1:numTrialsInBlock/4, LCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
-end
-
-xlabel('State Repetitions');
-ylabel('P(Go response | state)');
-xlim([1.0 numTrialsInBlock/4])
-ylim([0.0, 1.0])
-yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
-title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin Low Control Trials', model_name));
-grid on
-hold off;
 
 %{
 figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);

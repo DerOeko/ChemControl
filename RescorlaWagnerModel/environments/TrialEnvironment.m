@@ -34,10 +34,6 @@ classdef TrialEnvironment
             
             % Set the array of states
             obj.stateArray = stateArray;
-            fprintf("Number of GoToWin States: %i \n", size(obj.stateArray(obj.stateArray== 1), 2))
-            fprintf("Number of NoGoToWin States: %i \n", size(obj.stateArray(obj.stateArray== 3), 2))
-            fprintf("Number of total states: %i \n", size(obj.stateArray, 2))
-
 
             % Calculate the number of trials where the outcome matters
             nOutcomes = round(outcomeProb * numTrialsInBlock);

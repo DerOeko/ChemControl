@@ -29,8 +29,6 @@ function [blockInfo, HCprobGoMatrix, LCprobGoMatrix, stimulusSequence, outcomeVe
         blockInfo(block, :) = [currentTrial + 1, currentTrial + numTrialsInBlock, isHighControl];
         m = m.resetQ();
         m = m.resetP();
-        disp("New model: ")
-        disp(model)
         stateArray = repelem(conditions, repetitions);
         stateArray = stateArray(randperm(length(stateArray)));
         env = TrialEnvironment(rewardProb, controllProb, stateArray, numTrialsInBlock);

@@ -55,7 +55,7 @@ clc;
 lineStyles = {'-', '--', ':', '-.'}; % Plotting line styles
 
 % Initialize hyperparameters
-epsilon = 0.2;
+epsilon = 0.3;
 beta = 1;
 rho = 1;
 numTrialsInBlock = 320;
