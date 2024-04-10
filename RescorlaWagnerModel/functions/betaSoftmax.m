@@ -1,6 +1,3 @@
-function probabilities = betaSoftmax(actionWeights, beta)
-    W_max = max(actionWeights);
-    W_adj = actionWeights-W_max;
-    ex = exp(W_adj*beta);
-    probabilities = ex/sum(ex);
+function p = betaSoftmax(w, beta)
+    p = exp(w*beta)/sum(exp(w*beta));
 end

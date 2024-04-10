@@ -19,14 +19,14 @@ rewardProb = 0.85;
 controllProb = 0.8;
 numHCBlocks = numBlocks / 2;
 numLCBlocks = numBlocks - numHCBlocks;
-numIterations = 1;
+numIterations = 200;
 
 % Initializing accumulators for High Control (HC) and Low Control (LC)
 accumHCMeans = zeros(10, 4);  
 accumLCMeans = zeros(10, 4);
-
+model = Model(epsilon, rho, beta);
 for iter= 1:numIterations
-    [blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb);
+    [blockInfo, HCprobGoMatrix, LCprobGoMatrix] = runExperiment(model, numTrialsInBlock, numBlocks, rewardProb, controllProb);
     
     HCoccurrenceMeans = NaN(10, 4);
     for state = 1:4

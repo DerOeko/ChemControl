@@ -27,7 +27,6 @@ classdef FixedMotivationalBiasModel < GoBiasModel
             obj.V = V;
             obj.pi = pi;
             obj.W(:, 1) = obj.W(:,1) + obj.V(:)*obj.pi;
-            disp(obj.W)
         end
 
         function obj = updateModel(obj, reward, state, action)

@@ -1,4 +1,4 @@
-function [blockInfo, HCprobGoMatrix, LCprobGoMatrix, stimulusSequence, outcomeVecs, successVecs, simulatedActions, correctActions, controllabilityArray] = runExperiment(model, epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb)
+function [blockInfo, HCprobGoMatrix, LCprobGoMatrix, stimulusSequence, outcomeVecs, successVecs, simulatedActions, correctActions, controllabilityArray] = runExperiment(model, numTrialsInBlock, numBlocks, rewardProb, controllProb)
 
     % Matrix to store info about blocks for later analysis
     blockInfo = zeros(numBlocks, 3);
@@ -22,12 +22,15 @@ function [blockInfo, HCprobGoMatrix, LCprobGoMatrix, stimulusSequence, outcomeVe
     successVecs = cell(numBlocks, 1);
     simulatedActions = zeros(numBlocks, numTrialsInBlock);
     correctActions = zeros(numBlocks, numTrialsInBlock);
-
+    m = model;
 
     for block = 1:numBlocks
         isHighControl = controllabilityArray(block);
         blockInfo(block, :) = [currentTrial + 1, currentTrial + numTrialsInBlock, isHighControl];
-        m = model;
+        m = m.resetQ();
+        m = m.resetP();
+        disp("New model: ")
+        disp(model)
         stateArray = repelem(conditions, repetitions);
         stateArray = stateArray(randperm(length(stateArray)));
         env = TrialEnvironment(rewardProb, controllProb, stateArray, numTrialsInBlock);

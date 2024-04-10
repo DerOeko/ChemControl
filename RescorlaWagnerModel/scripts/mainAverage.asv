@@ -55,20 +55,21 @@ clc;
 lineStyles = {'-', '--', ':', '-.'}; % Plotting line styles
 
 % Initialize hyperparameters
-epsilon = 0.2;
-beta = 3;
-rho = 0.1;
-numTrialsInBlock = 160;
-numBlocks = 28;
+epsilon = 0.1;
+beta = 1;
+rho = 0.2;
+numTrialsInBlock = 400;
+numBlocks = 8;
 rewardProb = 0.85;
 controllProb = 0.8;
 numHCBlocks = numBlocks / 2;
 numLCBlocks = numBlocks - numHCBlocks;
 goBias = 0.3;
-Qinit = zeros(4,2) + 0.5;
+Qinit = zeros(4,2);
 V = [0.3 -0.3 0.3 -0.3];
 Vinit = [0.3 -0.3 0.3 -0.3];
 pi = 0.3;
+numRuns = 100;
 
 models = {
     Model(epsilon, rho, beta, Qinit),
@@ -79,12 +80,11 @@ models = {
 
 model_names = {'Generic Model', 'Go Bias Model', 'Fixed Motivational Bias Model', 'Dynamic Motivational Bias Model'};
 
-figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 
 %% Model definition
 % choose either
 % Model 1: Basic Model:
-%model = Model(epsilon, rho, beta);
+model = Model(epsilon, rho, beta, Qinit);
 
 % Model 2: Basic Model + Go Bias:
 %model = GoBiasModel(epsilon, rho, beta, goBias);
@@ -94,77 +94,97 @@ figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 
 % Model 4: Basic Model + Go Bias + Dynamic Motivational Bias:
 % model = DynamicMotivationalBiasModel(epsilon, rho, beta, goBias, Vinit, pi)
+figure;
+model_name = "Basic";
+[HCoccurrenceMeans, LCoccurrenceMeans] = averageExperiment(numRuns, model, numTrialsInBlock, numBlocks, rewardProb, controllProb);
 
-for k = 1:5
-    for i = 1:length(models)
-        model = models{i};
-        model_name = model_names{i};
-    
-        [blockInfo, HCprobGoMatrix, LCprobGoMatrix, ~, ~, ~, ~, ~] = runExperiment(model, epsilon, beta, rho, numTrialsInBlock, numBlocks, rewardProb, controllProb);
-    
-        HCoccurrenceMeans = NaN(numTrialsInBlock/4, 4);
-        for state = 1:4
-            for occurrence = 1:numTrialsInBlock/4
-                HCoccurrenceProbs = zeros(numHCBlocks, 1);
-                for block = 1:numHCBlocks
-                    HCoccurrenceProbs(block) = HCprobGoMatrix{block, state}(occurrence);
-                end
-                HCoccurrenceMeans(occurrence, state) = mean(HCoccurrenceProbs);
-            end
-        end
-    
-        LCoccurrenceMeans = NaN(numTrialsInBlock/4, 4);
-        for state = 1:4
-            for occurrence = 1:numTrialsInBlock/4
-                LCoccurrenceProbs = zeros(numLCBlocks, 1);
-                for block = 1:numLCBlocks
-                    LCoccurrenceProbs(block) = LCprobGoMatrix{block, state}(occurrence);
-                end
-                LCoccurrenceMeans(occurrence, state) = mean(LCoccurrenceProbs);
-            end
-        end
-    
-        % Create the subplot for the current model
-        subplot(2, 4, i);
-        hold on; % Allows multiple plots on the same figure
-    
-        for state = 1:4
-            plotStyle = [lineStyles{state} ]; % Combine color, line style, and marker
-            plot(1:numTrialsInBlock/4, HCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
-        end
-    
-        xlabel('State Repetitions');
-        xlim([1.0 numTrialsInBlock/4])
-        ylabel('P(Go response | state)');
-        ylim([0.0, 1.0])
-        yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
-        title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin High Control Trials', model_name));
-        grid on
-        hold off;
-    
-        subplot(2, 4, i + 4);
-        hold on;
-    
-        for state = 1:4
-            plotStyle = [ lineStyles{state}]; % Combine color, line style, and marker
-            plot(1:numTrialsInBlock/4, LCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
-        end
-    
-        xlabel('State Repetitions');
-        ylabel('P(Go response | state)');
-        xlim([1.0 numTrialsInBlock/4])
-        ylim([0.0, 1.0])
-        yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
-        title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin Low Control Trials', model_name));
-        grid on
-        hold off;
-    end
+subplot(2,1,1)
+hold on; % Allows multiple plots on the same figure
+
+for state = 1:4
+    plotStyle = [lineStyles{state} ]; % Combine color, line style, and marker
+    plot(1:numTrialsInBlock/4, HCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
 end
+
+xlabel('State Repetitions');
+xlim([1.0 numTrialsInBlock/4])
+ylabel('P(Go response | state)');
+ylim([0.0, 1.0])
+yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
+legend('G2W', 'G2A', 'NG2W', 'NG2A', 'Location', 'best');
+title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin High Control Trials', model_name));
+grid on
+hold off;
+
+subplot(2, 1,2);
+hold on;
+
+for state = 1:4
+    plotStyle = [ lineStyles{state}]; % Combine color, line style, and marker
+    plot(1:numTrialsInBlock/4, LCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
+end
+
+xlabel('State Repetitions');
+ylabel('P(Go response | state)');
+xlim([1.0 numTrialsInBlock/4])
+ylim([0.0, 1.0])
+yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
+title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin Low Control Trials', model_name));
+grid on
+hold off;
+
+%{
+figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+
+for i = 1:length(models)
+    model = models{i};
+    model_name = model_names{i};
+
+    [HCoccurrenceMeans, LCoccurrenceMeans] = averageExperiment(numRuns, model, numTrialsInBlock, numBlocks, rewardProb, controllProb);
+    disp("Done!")
+
+    % Create the subplot for the current model
+    subplot(2, 4, i);
+    hold on; % Allows multiple plots on the same figure
+
+    for state = 1:4
+        plotStyle = [lineStyles{state} ]; % Combine color, line style, and marker
+        plot(1:numTrialsInBlock/4, HCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
+    end
+
+    xlabel('State Repetitions');
+    xlim([1.0 numTrialsInBlock/4])
+    ylabel('P(Go response | state)');
+    ylim([0.0, 1.0])
+    yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
+    legend('G2W', 'G2A', 'NG2W', 'NG2A', 'Location', 'best');
+    title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin High Control Trials', model_name));
+    grid on
+    hold off;
+
+    subplot(2, 4, i + 4);
+    hold on;
+
+    for state = 1:4
+        plotStyle = [ lineStyles{state}]; % Combine color, line style, and marker
+        plot(1:numTrialsInBlock/4, LCoccurrenceMeans(:, state)', 'LineWidth', 2); % Plotting mean probabilities for each state
+    end
+
+    xlabel('State Repetitions');
+    ylabel('P(Go response | state)');
+    xlim([1.0 numTrialsInBlock/4])
+    ylim([0.0, 1.0])
+    yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
+    title(sprintf('%s: \nMean P(Go|State) \n Across State Repetitions \nin Low Control Trials', model_name));
+    grid on
+    hold off;
+end
+
 
 sgtitle('Comparison of Different RM Models');
 legend('G2W', 'G2A', 'NG2W', 'NG2A', 'Location', 'best');
 
-
+%}
 % Calculate Pavlovian bias
 GoToWin_GoToAvoid_HC = HCoccurrenceMeans(:, 1) - HCoccurrenceMeans(:, 2);
 % Reasoning behind the 1-mean here:
@@ -189,11 +209,11 @@ GoToWin_GoToAvoid_HC = HCoccurrenceMeans(:, 1) - HCoccurrenceMeans(:, 2);
 % To compute this, we need the probability of choosing "NoGo" when the
 % setting is a loss setting and the correct action is "NoGo", and when the
 % setting is win and the correct action is "NoGo". 
-NoGoToAvoid_NoGoToWin_HC = (1-HCoccurrenceMeans(:, 4)) - (1-HCoccurrenceMeans(:, 3));
+NoGoToAvoid_NoGoToWin_HC = (HCoccurrenceMeans(:, 4)) - (HCoccurrenceMeans(:, 3));
 
 % Calculate Pavlovian bias
 GoToWin_GoToAvoid_LC = LCoccurrenceMeans(:, 1) - LCoccurrenceMeans(:, 2);
-NoGoToAvoid_NoGoToWin_LC = (1-LCoccurrenceMeans(:, 4)) - (1-LCoccurrenceMeans(:, 3));
+NoGoToAvoid_NoGoToWin_LC = (LCoccurrenceMeans(:, 4)) - (LCoccurrenceMeans(:, 3));
 
 % Single matrix for boxplot
 biases = [GoToWin_GoToAvoid_HC, GoToWin_GoToAvoid_LC, NoGoToAvoid_NoGoToWin_HC, NoGoToAvoid_NoGoToWin_LC];

@@ -27,9 +27,6 @@ pi = 0.3;
 model = Model(epsilon, rho, beta, Qinit);
 [blockInfo, HCprobGoMatrix, LCprobGoMatrix, stimulusSequence, outcomeVecs, successVecs, simulatedActions, correctActions, controllabilityArray] = runExperiment( ...
     model, ...
-    epsilon, ...
-    beta, ...
-    rho, ...
     numTrialsInBlock, ...
     numBlocks, ...
     rewardProb, ...
@@ -39,12 +36,12 @@ model = Model(epsilon, rho, beta, Qinit);
 % Define parameter ranges
 %paramRanges = createParamRanges();
 paramRanges = {
-    [epsilon - 0.05, epsilon + 0.3, epsilon + 0.9], 
-    [beta - 1, beta + 5, beta + 10],
-    [rho - 0.02, rho + 0.1, rho + 0.5]
+    [epsilon - 0.05, epsilon, epsilon + 0.3, epsilon + 0.9], 
+    [beta - 1, beta, beta + 5, beta + 10],
+    [rho - 0.02, rho, rho + 0.1, rho + 0.5]
 };
 % Define model type
-modelType = "Dynamic Motivation Bias";
+modelType = "Basic";
 fprintf('Running parameter retrieval sanity check for %s Model...\n', modelType);
     fprintf('True parameters: epsilon = %.2f, beta = %.2f, rho = %.2f\n', epsilon, beta, rho);
 

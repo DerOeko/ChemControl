@@ -34,14 +34,18 @@ classdef TrialEnvironment
             
             % Set the array of states
             obj.stateArray = stateArray;
-            
+            fprintf("Number of GoToWin States: %i \n", size(obj.stateArray(obj.stateArray== 1), 2))
+            fprintf("Number of NoGoToWin States: %i \n", size(obj.stateArray(obj.stateArray== 3), 2))
+            fprintf("Number of total states: %i \n", size(obj.stateArray, 2))
+
+
             % Calculate the number of trials where the outcome matters
             nOutcomes = round(outcomeProb * numTrialsInBlock);
             
             % Generate a vector with 1s for trials where the outcome matters,
             % and 0s for trials where the outcome doesn't matter
             obj.outcomeVec = [ones(1, nOutcomes) zeros(1, numTrialsInBlock - nOutcomes, 1)];
-            
+
             % Shuffle the outcomeVec
             obj.outcomeVec = obj.outcomeVec(randperm(numTrialsInBlock));
             
@@ -51,7 +55,7 @@ classdef TrialEnvironment
             % Generate a vector with 1s for trials where the action leads to the correct reward/penalty,
             % and 0s for trials where the action doesn't lead to the correct reward/penalty
             obj.successVec = [ones(1, nSuccesses) zeros(1, numTrialsInBlock - nSuccesses, 1)];
-            
+
             % Shuffle the successVec
             obj.successVec = obj.successVec(randperm(numTrialsInBlock));
         end
@@ -143,7 +147,7 @@ classdef TrialEnvironment
             else
                 % If it's not a high control block
                 if ~outcomeMatters
-                    % If the outcome doesn't matter
+                    % In 20% of the cases, action matters
                     if correctAction
                         % If the agent's action is correct
                         if isLossState
