@@ -55,32 +55,21 @@ clc;
 lineStyles = {'-', '--', ':', '-.'}; % Plotting line styles
 
 % Initialize hyperparameters
-epsilon = 0.2;
+epsilon = 0.31;
 beta = 1;
-rho = 1;
-numTrialsInBlock = 800;
+rho = 0.5;
+numTrialsInBlock = 80;
 numBlocks = 8;
 rewardProb = 0.85;
 controllProb = 0.8;
 numHCBlocks = numBlocks / 2;
 numLCBlocks = numBlocks - numHCBlocks;
 goBias = 0.3;
-Qinit = ones(4,2);
+Qinit = [0.5*rho -0.5*rho 0.5*rho -0.5*rho; 0.5*rho -0.5*rho 0.5*rho -0.5*rho]';
 V = [0.3 -0.3 0.3 -0.3];
 Vinit = [0.3 -0.3 0.3 -0.3];
 pi = 0.3;
-numRuns = 50;
-
-% Hyperparameter observations
-%{
-    epsilon stays constant at 0.1
-    vary beta from 1 to 5.
-
-    For beta = 1 and rho = 1: biased
-    For beta = 2 and rho = 1: biased, but less
-    For beta = 3 and rho = 1: biased, but now flipped???
-    For beta = 10 and rho = 1: biased, but even more flipped?!
-%}
+numRuns = 100;
 
 models = {
     Model(epsilon, rho, beta, Qinit),
@@ -105,18 +94,16 @@ model_names = {'Generic Model', 'Go Bias Model', 'Fixed Motivational Bias Model'
 
 % Model 4: Basic Model + Go Bias + Dynamic Motivational Bias:
 % model = DynamicMotivationalBiasModel(epsilon, rho, beta, goBias, Vinit, pi)
-Qinits = {zeros(4,2), zeros(4,2)+0.5, ones(4,2), ones(4,2)+5};
-beta = 5;
 figure;
-for i = 1:4
-    Qinit = Qinits{i};
-    disp(Qinit)
+betas = {1 2 3 4 5};
+for i = 1:5
+    beta = betas{i};
     model = Model2(epsilon, rho, beta, Qinit);
-
+    
     model_name = "Basic";
     [HCoccurrenceMeans, LCoccurrenceMeans] = averageExperiment(numRuns, model, numTrialsInBlock, numBlocks, rewardProb, controllProb);
     
-    subplot(2,4,i)
+    subplot(2,5,i)
     hold on; % Allows multiple plots on the same figure
     
     for state = 1:4
@@ -130,11 +117,11 @@ for i = 1:4
     ylim([0.0, 1.0])
     yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
     legend('G2W', 'G2A', 'NG2W', 'NG2A', 'Location', 'best');
-    title(sprintf('%s %s: \nMean P(Go|State) \n Across State Repetitions \nin High Control Trials', model_name, mat2str(Qinit)));
+    title(sprintf('%s \n with beta %i: \nMean P(Go|State) \n Across State Repetitions \nin High Control Trials', model_name, beta));
     grid on
     hold off;
     
-    subplot(2, 4, i+4);
+    subplot(2, 5, i+5);
     hold on;
     
     for state = 1:4
@@ -147,11 +134,10 @@ for i = 1:4
     xlim([1.0 numTrialsInBlock/4])
     ylim([0.0, 1.0])
     yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
-    title(sprintf('%s %s: \nMean P(Go|State) \n Across State Repetitions \nin Low Control Trials', model_name,mat2str(Qinit)));
+    title(sprintf('%s\n with beta %i: \nMean P(Go|State) \n Across State Repetitions \nin Low Control Trials', model_name, beta));
     grid on
     hold off;
 end
-
 
 %{
 figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);

@@ -115,29 +115,29 @@ classdef TrialEnvironment
                         % If the agent's action is correct
                         if isLossState
                             % If it's a loss state
-                            reward = fi(successOutcome, 0, -10);
+                            reward = fi(successOutcome, 0, -1);
                         else
                             % If it's a win state
-                            reward = fi(successOutcome, 10, 0);
+                            reward = fi(successOutcome, 1, 0);
                         end
                     else
                         % If the agent's action is incorrect
                         if isLossState
                             % If it's a loss state
-                            reward = fi(~successOutcome, 0, -10);
+                            reward = fi(~successOutcome, 0, -1);
                         else
                             % If it's a win state
-                            reward = fi(~successOutcome, 10, 0);
+                            reward = fi(~successOutcome, 1, 0);
                         end
                     end
                 else
                     % If the outcome doesn't matter
                     if isLossState
                         % If it's a loss state
-                        reward = fi(successOutcome, 0, -10);
+                        reward = fi(successOutcome, 0, -1);
                     else
                         % If it's a win state
-                        reward = fi(successOutcome, 10, 0);
+                        reward = fi(successOutcome, 1, 0);
                     end
                 end
             else
@@ -148,29 +148,29 @@ classdef TrialEnvironment
                         % If the agent's action is correct
                         if isLossState
                             % If it's a loss state
-                            reward = fi(successOutcome, 0, -10);
+                            reward = fi(successOutcome, 0, -1);
                         else
                             % If it's a win state
-                            reward = fi(successOutcome, 10, 0);
+                            reward = fi(successOutcome, 1, 0);
                         end
                     else
                         % If the agent's action is incorrect
                         if isLossState
                             % If it's a loss state
-                            reward = fi(~successOutcome, 0, -10);
+                            reward = fi(~successOutcome, 0, -1);
                         else
                             % If it's a win state
-                            reward = fi(~successOutcome, 10, 0);
+                            reward = fi(~successOutcome, 1, 0);
                         end
                     end
                 else
                     % If the outcome matters
                     if isLossState
                         % If it's a loss state
-                        reward = fi(successOutcome, 0, -10);
+                        reward = fi(successOutcome, 0, -1);
                     else
                         % If it's a win state
-                        reward = fi(successOutcome, 10, 0);
+                        reward = fi(successOutcome, 1, 0);
                     end
                 end
             end
