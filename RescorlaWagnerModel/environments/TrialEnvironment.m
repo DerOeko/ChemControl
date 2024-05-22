@@ -1,68 +1,68 @@
 classdef TrialEnvironment
     properties
         % Probability of the correct action leading to a good outcome
-        successProb = 0.85;
+        rP = 0.85;
         
         % Probability of the action mattering
-        outcomeProb = 0.8;
+        cP = 0.8;
         
-        % Assuming env.conditions = {'GoToWin', 'GoToAvoidLoss', 'NoGoToWin', 'NoGoToAvoidLoss'}
+        % Assuming env.cond = {'GoToWin', 'GoToAvoidLoss', 'NoGoToWin', 'NoGoToAvoidLoss'}
         % and actions are represented as [1, 2] for ['Go', 'NoGo']
-        conditions = {1, 2, 3, 4};
+        cond = {1, 2, 3, 4};
         
         % Array of states
-        stateArray;
+        sArr;
         
         % Number of trials in a block
-        numTrialsInBlock;
+        T;
         
         % Vector indicating whether the outcome matters for each trial
-        outcomeVec;
+        cVec;
         
         % Vector indicating whether the action leads to the correct reward/penalty for each trial
-        successVec;
+        rVec;
     end
 
     methods
-        function obj = TrialEnvironment(successProb, outcomeProb, stateArray, numTrialsInBlock)
+        function obj = TrialEnvironment(rP, cP, sArr, T)
             % Constructor
             % Set the probability of the correct action leading to a good outcome
-            obj.successProb = successProb;
+            obj.rP = rP;
             
             % Set the probability of the action mattering
-            obj.outcomeProb = outcomeProb;
+            obj.cP = cP;
             
             % Set the array of states
-            obj.stateArray = stateArray;
+            obj.sArr = sArr;
 
             % Calculate the number of trials where the outcome matters
-            nOutcomes = round(outcomeProb * numTrialsInBlock);
+            O = round(cP * T);
             
             % Generate a vector with 1s for trials where the outcome matters,
             % and 0s for trials where the outcome doesn't matter
-            obj.outcomeVec = [ones(1, nOutcomes) zeros(1, numTrialsInBlock - nOutcomes, 1)];
+            obj.cVec = [ones(1, O) zeros(1, T - O, 1)];
 
-            % Shuffle the outcomeVec
-            obj.outcomeVec = obj.outcomeVec(randperm(numTrialsInBlock));
+            % Shuffle the cVec
+            obj.cVec = obj.cVec(randperm(T));
             
             % Calculate the number of trials where the action leads to the correct reward/penalty
-            nSuccesses = round(successProb * numTrialsInBlock);
+            S = round(rP * T);
             
             % Generate a vector with 1s for trials where the action leads to the correct reward/penalty,
             % and 0s for trials where the action doesn't lead to the correct reward/penalty
-            obj.successVec = [ones(1, nSuccesses) zeros(1, numTrialsInBlock - nSuccesses, 1)];
+            obj.rVec = [ones(1, S) zeros(1, T - S, 1)];
 
-            % Shuffle the successVec
-            obj.successVec = obj.successVec(randperm(numTrialsInBlock));
+            % Shuffle the rVec
+            obj.rVec = obj.rVec(randperm(T));
         end
         
         function [state, correctAction, obj] = presentTrial(obj)
             % Present a trial
-            % Get the current state from the stateArray
-            state = obj.stateArray(1);
+            % Get the current state from the sArr
+            state = obj.sArr(1);
             
-            % Remove the current state from the stateArray
-            obj.stateArray(1) = [];
+            % Remove the current state from the sArr
+            obj.sArr(1) = [];
             
             % Get the correct action for the current state
             correctAction = obj.getCorrectAction(state);
@@ -77,14 +77,14 @@ classdef TrialEnvironment
             end
         end
         
-        function reward = getReward(obj, trialIndex, state, action, isHighControl)
+        function reward = getReward(obj, trialIndex, state, action, isHC)
             % Calculate the reward for a given trial
             
             % Get whether the outcome matters for the current trial
-            outcomeMatters = obj.outcomeVec(trialIndex);
+            outcomeMatters = obj.cVec(trialIndex);
             
             % Get whether the action leads to the correct reward/penalty for the current trial
-            successOutcome = obj.successVec(trialIndex);
+            successOutcome = obj.rVec(trialIndex);
             
             % Check if the current state is a loss state or not
             isLossState = ~mod(state, 2);
@@ -107,7 +107,7 @@ classdef TrialEnvironment
             %   3. If the condition is false (zero), it returns the second-to-last argument (varargin{length(varargin)-1}).
             fi = @(varargin) varargin{length(varargin) - varargin{1}};
 
-            if isHighControl
+            if isHC
                 % If it's a high control block
                 if outcomeMatters
                     % If the outcome matters

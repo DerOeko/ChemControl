@@ -14,7 +14,11 @@ lineStyles = {'-', '--', ':', '-.'}; % Plotting line styles
 
 %% Set up the Import Options and import the data
 % Import the data
-folderPath = "/project/3017083.01/behavioral study/data/raw/";
+run("github_config.m") % this includes folder paths with real data, redacted for privacy security
+% contains the folderPath
+% For this to work, create a github_config.m file with your path to data
+% (see README)
+
 fileList = dir(fullfile(folderPath, "*.csv"));
 participantData = struct();
 
@@ -73,20 +77,21 @@ for i = 1:numel(participants)
 end
 
 averageProportionGoResponses = mean(proportionGoResponses, 3);
-numTrialsInBlock = 40;
+T = 40;
 figure;
 
 hold on; % Allows multiple plots on the same figure
 for state = 1:4
-    plot(1:numTrialsInBlock/4, averageProportionGoResponses(state, :)', 'LineWidth', 2); % Plotting mean probabilities for each state
+    plot(1:T/4, averageProportionGoResponses(state, :)', 'LineWidth', 2); % Plotting mean probabilities for each state
 end
 xlabel('State Repetitions');
-xlim([1.0 numTrialsInBlock/4])
+xlim([1.0 T/4])
 ylabel('P(Go response | state)');
 ylim([0.0, 1.0])
 yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
 legend('Go to Win', 'Go to Avoid Loss', 'NoGo to Win', 'NoGo to Avoid Loss', 'Location', 'best');
-title("Mean P(Go|State) Across State Repetitions in High Control Trials");
+title_str = sprintf("Participant Data: \nMean P(Go|State) Across State Repetitions in\nHigh Control Trials with N = %i", numel(participants));
+title(title_str);
 grid on
 
 hold off;
