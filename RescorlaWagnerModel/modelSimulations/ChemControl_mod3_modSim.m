@@ -1,0 +1,89 @@
+function [out] = ChemControl_mod3_modSim(parameters, subj)
+% Standard Q-learning model with delta learning rule.
+    
+    % ----------------------------------------------------------------------- %
+    %% Retrieve parameters:
+    ep = sigmoid(parameters(1));
+    rho = exp(parameters(2));
+    gB = parameters(3);
+    pi = parameters(4);
+    % ----------------------------------------------------------------------- %
+
+    ep = 0.07;
+    rho = 17;
+    goBias = 0.45;
+    pi = 0.75;
+    %% Unpack data:
+
+    % Extract task features:
+    stimuli = subj.stimuli; 
+    controllabilities = subj.controllability; % 1 or 0
+    randomRewards = subj.randomReward; % 1 or 0
+    randHCs = subj.randHC; % 1, 0, 2
+    randLCs = subj.randLC; % 1, 0, 2
+
+    % Data dimensions:
+    B = size(stimuli, 1); % Number of blocks
+    T = size(stimuli, 2); % Number of trials
+    S = 4; % Number of stimuli
+
+    % Store outputs
+    HCcell = cell(B/2, S); % Store go probs in HC
+    LCcell = cell(B/2, S); % Store go probs in LC
+    actions = zeros(B, T);
+    outcomes = zeros(B, T);
+
+    q0 = [0.5 -0.5 0.5 -0.5];
+    sv = q0;
+    hc = 0;
+    lc = 0;
+    for b = 1:B
+        isHC = controllabilities(b, 1);
+        hc = hc + isHC;
+        lc = lc + ~isHC;
+        
+        q_g = q0 * rho;
+        q_ng = q0 * rho;
+        w_g = q0 * rho;
+        w_ng = q0 * rho;
+
+        for t = 1:T
+            s = stimuli(b, t);
+            randHC = randHCs(b, t); % outcome matters (1, 0, 2)
+            randLC = randLCs(b, t); % outcome doesn't matter (1, 0, 2)
+            isRewarded = randomRewards(b, t);
+
+            w_g(s) = q_g(s) + gB + pi * sv(s);
+            w_ng(s) = q_ng(s);
+            
+            p1 = exp(w_g(s))./(exp(w_g(s)) + exp(w_ng(s)));
+            
+            if isHC
+                HCcell{hc, s}(end+1) = p1;
+            else
+                LCcell{lc, s}(end+1) = p1;
+            end
+            
+            a = returnAction(p1);
+            o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
+            actions(b, t) = a;
+            outcomes(b, t) = o;
+            if a==1
+                q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+            elseif a==2
+                q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+            end
+        end
+    end
+
+    out.HCcell = HCcell;
+    out.LCcell = LCcell;
+    out.randHC = randHCs;
+    out.randLC = randLCs;
+    out.stimuli = stimuli;
+    out.controllability = controllabilities;
+    out.randomRewards = randomRewards;
+    out.actions = actions;
+    out.outcomes = outcomes;
+end
+      
