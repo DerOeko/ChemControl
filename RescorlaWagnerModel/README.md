@@ -15,4 +15,5 @@ folderPath = "/project/path/to/your/data/";"
 * See each script for a description of function
 
 ## Contact
-For questions, contact me, at samuelgerrit.nellessen@gmail.com.
+For questions, please contact me, at samuelgerrit.nellessen@gmail.com.
+
