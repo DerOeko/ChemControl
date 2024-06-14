@@ -62,13 +62,13 @@ nSub = length(data);
 % Priors:
 fprintf('Initialize priors\n')
 
-priors{1} = struct('mean', [0 2], 'variance', [4 9]); % prior_model
-priors{2} = struct('mean', [0 2 0], 'variance', [4 9 9]); % prior_model_goBias
-priors{3} = struct('mean', [0 2 0 0], 'variance', [4 9 9 9]); % prior_model_fixedPavlov
-priors{4} = struct('mean', [0 2 0 0], 'variance', [4 9 9 9]); % prior_model_dynamicPavlov
-priors{5} = struct('mean', [0 2 0 0], 'variance', [4 9 9 4]); % prior_model_fixedOmega
-priors{6} = struct('mean', [0 2 0 0 0 0 2], 'variance', [4 9 9 4 4 4 9]); % prior_model_dynamicOmega1
-priors{7} = struct('mean', [0 2 0 0 0 2 0], 'variance', [4 9 9 4 4 9 4]); % prior_model_dynamicOmega2
+priors{1} = struct('mean', [0 2], 'variance', [3 5]); % prior_model
+priors{2} = struct('mean', [0 2 0], 'variance', [3 5 10]); % prior_model_goBias
+priors{3} = struct('mean', [0 2 0 0], 'variance', [3 5 10 10]); % prior_model_fixedPavlov
+priors{4} = struct('mean', [0 2 0 0], 'variance', [3 5 10 10]); % prior_model_dynamicPavlov
+priors{5} = struct('mean', [0 2 0 0], 'variance', [3 5 10 3]); % prior_model_fixedOmega
+priors{6} = struct('mean', [0 2 0 0 0 0 2], 'variance', [3 5 10 3 3 3 5]); % prior_model_dynamicOmega1
+priors{7} = struct('mean', [0 2 0 0 0 2 0], 'variance', [3 5 10 3 3 5 3]); % prior_model_dynamicOmega2
 
 % Output names:
 fprintf("Initialize output file names\n")
@@ -216,6 +216,17 @@ end
 inputFile = fullfile(dirs.results, 'ChemControl_cbm_inputData.mat');
 fdata = load(inputFile);
 data = fdata.data;
+
+fprintf('Select subjects\n');
+
+% Select subjects:
+invalidSubs = [2 11 19 20];
+fprintf('Exclude subjects %s\n', num2str(invalidSubs));
+validSubs = setdiff(1:nSub, invalidSubs);
+nSubValid = length(validSubs);
+if ~isempty(invalidSubs)
+    data = data(validSubs);
+end
 
 % 2nd input: a cell input containing function handle to models
 

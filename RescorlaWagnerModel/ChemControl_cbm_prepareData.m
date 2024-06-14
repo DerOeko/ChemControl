@@ -48,15 +48,22 @@ nTrials = 40; % how many trials in a block
 
 subFind = dir(fullfile(dirs.behav, "*.csv"));
 subFind = {subFind.name};
-subList = nan(numel(subFind), 1);
 
-for iSub = 1:numel(subFind)
-    subList(iSub) = str2double(string(extractBetween(subFind(iSub), "sub-", "_Robo")));
+invalidSubs = [2 10 19 20];
+validSubs = setdiff(1:numel(subFind), invalidSubs);
+subFind = {subFind{validSubs}};
+nSub = numel(subFind);
+
+subList = nan(numel(subFind), 1);
+% Retrieve names of subject fiels:
+for iSub = 1:nSub % 1 till number of elements in subFind
+    subList(iSub) = str2double(string(extractBetween(subFind{iSub}, 'sub-', '_Robo'))); 
+    % extracts the actual "sub" number of each subject --> check which ones found
 end
 
-sID = sort(subList);
-nSub = numel(sID);
 
+% 2, 12, 21, and 22 are below 55% accuracy in high control trials
+% 2, 11, 19, 20
 % ----------------------------------------------------------------------- %
 %% Load rawData:
 
@@ -68,7 +75,7 @@ fprintf("Load raw data\n");
 
 for iSub = 1:nSub
     fprintf('Load data for subject %03d\n', iSub);
-    
+    fprintf('SubID: %03d\n', subList(iSub));
     % Define file path
     filePath = fullfile(folderPath, subFind{iSub});
     

@@ -53,7 +53,7 @@ function [out] = ChemControl_mod4_modSim(parameters, subj)
             w_ng(s) = q_ng(s);
 
 
-            p1 = exp(w_g(s))./(exp(w_g(s)) + exp(w_ng(s)));
+            p1 = 1/(1+exp(w_ng(s)-w_g(s)));
             
             if isHC
                 HCcell{hc, s}(end+1) = p1;

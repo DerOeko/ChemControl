@@ -39,7 +39,7 @@ for b = 1:B
         w_g(s) = q_g(s);
         w_ng(s) = q_ng(s);
 
-        p1 = 1/(1+exp(-(w_g(s)-w_ng(s))));
+        p1 = 1/(1+exp(w_ng(s)-w_g(s)));
         p2 = 1-p1;
 
         if a==1
