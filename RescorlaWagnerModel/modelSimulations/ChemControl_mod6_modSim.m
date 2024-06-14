@@ -6,10 +6,9 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
     ep = sigmoid(parameters(1));
     rho = exp(parameters(2));
     gB = parameters(3);
-    oi = sigmoid(parameters(4));
-    alpha = sigmoid(parameters(5));
-    kappa = sigmoid(parameters(6));
-    slope = exp(parameters(7));
+    alpha = sigmoid(parameters(4));
+    kappa = sigmoid(parameters(5));
+    slope = exp(parameters(6));
     % ----------------------------------------------------------------------- %
 
     %% Unpack data:
@@ -36,7 +35,7 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
     hc = 0;
     lc = 0;
     
-    omega = oi;
+    omega = 0.5;
     alpha_q = 0;
     alpha_v = 0;
 

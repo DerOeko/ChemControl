@@ -6,10 +6,9 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
     ep = sigmoid(parameters(1));
     rho = exp(parameters(2));
     gB = parameters(3);
-    oi = sigmoid(parameters(4));
-    alpha = sigmoid(parameters(5));
-    beta = exp(parameters(6));
-    thres = tanh(parameters(7));
+    alpha = sigmoid(parameters(4));
+    beta = exp(parameters(5));
+    thres = tanh(parameters(6));
 
     % ----------------------------------------------------------------------- %
     %% Unpack data:
@@ -36,7 +35,7 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
     hc = 0;
     lc = 0;
     
-    omega = oi;
+    omega = 0.5;
     Omega = 0;
     %% Simulating data
     for b = 1:B
