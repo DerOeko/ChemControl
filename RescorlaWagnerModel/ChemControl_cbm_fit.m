@@ -217,17 +217,6 @@ inputFile = fullfile(dirs.results, 'ChemControl_cbm_inputData.mat');
 fdata = load(inputFile);
 data = fdata.data;
 
-fprintf('Select subjects\n');
-
-% Select subjects:
-invalidSubs = [2 11 19 20];
-fprintf('Exclude subjects %s\n', num2str(invalidSubs));
-validSubs = setdiff(1:nSub, invalidSubs);
-nSubValid = length(validSubs);
-if ~isempty(invalidSubs)
-    data = data(validSubs);
-end
-
 % 2nd input: a cell input containing function handle to models
 
 % 3rd input: another cell input containing file-address to files saved by cbm_lap

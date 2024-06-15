@@ -35,10 +35,7 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
     q0 = [0.5 -0.5 0.5 -0.5];
     hc = 0;
     lc = 0;
-    
-    omega = oi;
-    alpha_q = 0;
-    alpha_v = 0;
+   
 
     for b = 1:B
         isHC = controllabilities(b, 1);
@@ -50,6 +47,9 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
         w_g = q0 * rho;
         w_ng = q0 * rho;
         sv = q0;
+        omega = oi;
+        alpha_q = 0;
+        alpha_v = 0;
 
         for t = 1:T
             s = stimuli(b, t);

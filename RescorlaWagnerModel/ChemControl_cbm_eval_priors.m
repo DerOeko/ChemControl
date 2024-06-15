@@ -173,25 +173,26 @@ summary_stats_median = array2table(median(T), 'VariableNames', {'mean', 'var', '
 disp('Median values for parameters with recoverability score above 0.5:');
 disp(summary_stats_median);
 
-%% 01c) Select good parameters and simulate recovery% ----------------------------------------------------------------------- %
+% ----------------------------------------------------------------------- %
+%% 01c) Select good parameters and simulate recovery
 % Settings:
 fprintf('>>> Set parameter recovery correlation settings\n')
-numSamples = 100; % How many parameter samples for each parameter?
-numSampleParam = 100; % From each parameter samples, how many to take
+numSamples = 1000; % How many parameter samples for each parameter?
+numSampleParam = 10000; % From each parameter samples, how many to take
 
 % Define means and variances for each parameter
-eps_mean    = 0; eps_v      = 5; % Learning rate (sigmoid)
+eps_mean    = 0; eps_v      = 10; % Learning rate (sigmoid)
 rho_mean    = 2; rho_v      = 3; % Discount factor (exp)
 gB_mean     = 0; gB_v       = 10; % Go bias (identity)
 pi_mean     = 0; pi_v       = 10; % Pavlovian bias (identity)
 o_mean      = 0; o_v        = 5; % Omega (sigmoid)
-o0_mean     = 0; o0_v       = 5; % Initial omega (sigmoid)
+o0_mean     = 5; o0_v       = 100; % Initial omega (sigmoid)
 alpha_mean  = 0; alpha_v    = 5; % Alpha (sigmoid)
 kap_mean    = 0; kap_v      = 5; % Kappa (sigmoid)
 slope_mean  = 2; slope_v    = 3; % Slope (exp)
-aO_mean     = 0; aO_v       = 5; % Alpha Omega (sigmoid)
-bO_mean     = 2; bO_v       = 3; % Beta Omega (exp)
-tO_mean     = 0; tO_v       = 5; % Theta Omega (scaled sigmoid)
+aO_mean     = 0; aO_v       = 100; % Alpha Omega (sigmoid)
+bO_mean     = 2; bO_v       = 100; % Beta Omega (exp)
+tO_mean     = 0; tO_v       = 100; % Theta Omega (scaled sigmoid)
 
 % Generate samples for each parameter
 eps     = normrnd(eps_mean,   sqrt(eps_v), [numSamples, 1]);
@@ -220,6 +221,14 @@ paramCombinations = [randsample(eps, numSampleParam, true), ...
                      randsample(aOs, numSampleParam, true), ...
                      randsample(bOs, numSampleParam, true), ...
                      randsample(tOs, numSampleParam, true)];
+
+% paramCombinations = [randsample(eps, numSampleParam, true), ...
+%                      randsample(rhos, numSampleParam, true), ...
+%                      randsample(gBs, numSampleParam, true), ...
+%                      randsample(o0s, numSampleParam, true), ...
+%                      randsample(aOs, numSampleParam, true), ...
+%                      randsample(bOs, numSampleParam, true), ...
+%                      randsample(tOs, numSampleParam, true)];
 
 numCombinations     = uint64(size(paramCombinations, 1));
 
@@ -271,6 +280,7 @@ currentParamIndices = paramIndices{selMod};
 retrievedParams = zeros(numCombinations, nParam);
 
 parfor iComb = 1:numCombinations
+    % parameters = paramCombinations(iComb, :);
     parameters = zeros(nParam, 1);
     for i = 1:nParam
         iParam = currentParamIndices(i);
@@ -328,25 +338,22 @@ for i = 1:nParam
     ylabel(sprintf('Retrieved %s', paramNames{selMod}{i}));
     title(sprintf('True vs. Retrieved %s, \ncorr: %.02f', paramNames{selMod}{i}, corr(paramCombinations(:, iParam), retrievedParams(:, i))));
 end
+% for i = 1:nParam
+%     subplot(1, nParam, i);
+%     scatter(paramCombinations(:, i), retrievedParams(:, i), "filled");
+%     hold on;
+%     % Fit a linear model to the data
+%     p = polyfit(paramCombinations(:, i), retrievedParams(:, i), 1);
+%     yfit = polyval(p, paramCombinations(:, i));
+%     % Plot the linear fit
+%     plot(paramCombinations(:, i), yfit, 'LineWidth', 2);
+%     xlabel(sprintf('True %s', paramNames{selMod}{i}));
+%     ylabel(sprintf('Retrieved %s', paramNames{selMod}{i}));
+%     title(sprintf('True vs. Retrieved %s, \ncorr: %.02f', paramNames{selMod}{i}, corr(paramCombinations(:, i), retrievedParams(:, i))));
+% end
 
 % ----------------------------------------------------------------------- %
-%% 01e) Density plots of single parameters:
-
-f_hbi   = load(fname);
-cbm     = f_hbi.cbm;
-
-% Click through densityplots of each parameter:
-for iParam = 1:size(cbm.output.parameters{selMod}, 2) % iParam = 2
-    x = cbm.output.parameters{selMod}(:, iParam);
-    ksdensity(x); hold on
-    plot(x, 0.1 + randn(length(x), 1)/50, 'b.');
-    title(sprintf('Model %02d: Parameter %d', selMod, iParam));
-    w = waitforbuttonpress;
-    close gcf
-end
-
-% ----------------------------------------------------------------------- %
-%% 04c) Correlations/ bivariate distributions:
+%% 01e) Correlations/ bivariate distributions:
 
 % Select parameters:
 iParam1 = 1; % specify first parameter
@@ -379,3 +386,85 @@ for iParam1 = 1:nParam
         end
     end
 end
+
+% ----------------------------------------------------------------------- %
+%% 02a) Confusion matrix: 
+
+confusionMatrix = zeros(nMod, nMod);
+runsPerM = 10;
+Mods = repelem([1 2 3 4 5 6 7], runsPerM);
+nRuns = nMod * runsPerM;
+
+% Usa a temporary cell array to store intermediate confusion matrices
+% (needed for parallel computing)
+tempConfusionMatrices = cell(nRuns, 1);
+
+for iMod = 1:nMod
+    nParam = nParams(iMod);
+    currentParamIndices = paramIndices(iMod);
+    parfor iRun = 1:runsPerM
+        parameters = zeros(nParam, 1);
+        for i = 1:nParam
+            iParam = currentParamIndices(i);
+            parameters(i) = paramCombinations(iComb, iParam);
+        end
+        data = cell(nSub, 1);
+        for iSub = 1:nSub
+            % Extract subject data:
+            fprintf("Start subject %03d\n", iSub)
+            subj = sim_subj;
+            % Simulate:
+            out = modelSimHandle(parameters, subj); 
+            data{iSub} = struct("stimuli", out.stimuli, "actions", out.actions, "outcomes", out.outcomes);
+        end
+
+        temp_folder = tempname;
+        mkdir(temp_folder);
+        fcbm_maps = cell(nMod, 1);
+        models = cell(nMod, 1);
+        for iMod = 1:nMod
+            fcbm_maps{iMod} = fullfile(temp_folder, sprintf("lap_mod%02d.mat", iMod));
+            models{iMod} = str2func(sprintf("@ChemControl_mod%d", iMod));
+            cbm_lap(data, models{iMod}, priors{iMod}, fcbm_maps{iMod});
+        end
+
+        fname_hbi = fullfile(temp_folder, 'hbi_model.mat');
+        cbm_hbi(data, models, fcbm_maps, fname_hbi)
+
+        d = load(fname_hbi);
+        cbm = d.cbm;
+        freq = cbm.output.model_frequency;
+    
+        [~, choice] = max(freq);
+    
+        % Store the result in the temporary confusion matrix
+        tempConfusionMatrices{iRun} = zeros(nMod, nMod);
+        tempConfusionMatrices{iRun}(iMod, choice) = 1;
+    end
+end
+
+for iRun = 1:nRuns
+    confusionMatrix = confusionMatrix + tempConfusionMatrices{iRun};
+end
+
+% Display the confusion matrix
+disp('Confusion Matrix:')
+disp(confusionMatrix)
+
+% Display confusion matrix as a heatmap
+figure;
+
+% Create the heatmap
+h = heatmap(confusionMatrix, 'Colormap', parula, 'ColorbarVisible', 'on', 'Title', 'Confusion Matrix');
+h.XDisplayLabels = cfg.model_names; % Set x-axis labels
+h.YDisplayLabels = cfg.model_names; % Set y-axis labels
+
+% Add labels to the axes
+ax = gca;
+
+% Customize the heatmap axes to place x-axis labels at the top
+h.NodeChildren(3).XAxisLocation = 'top';
+xlabel('Predicted Model');
+ylabel('True Model');
+
+        

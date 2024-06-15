@@ -1,5 +1,5 @@
 function o = returnReward(s, a, isHC, randLC, randHC, isRewarded)
-    isWinState = ~mod(s, 2);
+    isWinState = mod(s, 2);
     isCorrectAction = a == getCorrectAction(s);
     if isHC % high control block
             if randHC == 1 % outcome matters

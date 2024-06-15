@@ -47,7 +47,7 @@ function [out] = ChemControl_mod1_modSim(parameters, subj)
 
             w_g(s) = q_g(s);
             w_ng(s) = q_ng(s);
-            p1 = 1/(1+exp(w_ng(s)-w_g(s)));
+            p1 = exp(w_g(s))./(exp(w_g(s)) + exp(w_ng(s)));
             
             if isHC
                 HCcell{hc, s}(end+1) = p1;
@@ -76,5 +76,4 @@ function [out] = ChemControl_mod1_modSim(parameters, subj)
     out.randomRewards = randomRewards;
     out.actions = actions;
     out.outcomes = outcomes;
-
 end

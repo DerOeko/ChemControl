@@ -16,9 +16,6 @@ B = size(outcomes, 1);
 T = size(outcomes, 2);
 initQ = [0.5 -0.5 0.5 -0.5] * rho;
 initV = [0.5 -0.5 0.5 -0.5];
-omega = oi;
-alpha_q = 0;
-alpha_v = 0;
 
 loglik = 0;
 
@@ -28,7 +25,10 @@ for b = 1:B
     q_g = initQ;
     q_ng = initQ;
     sv = initV;
-
+    omega = oi;
+    alpha_q = 0;
+    alpha_v = 0;
+    
     for t=1:T
         a = actions(b, t);
         o = outcomes(b, t);
