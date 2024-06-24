@@ -18,7 +18,7 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
     randLCs = subj.randLC; % 1, 0, 2
     cali_stimuli = subj.cali_stimuli;
     cali_randHC = subj.cali_randHC;
-    cali_randLC = subj.cali_randHC;
+    cali_randLC = subj.cali_randLC;
     cali_randRewards = subj.cali_randReward;
 
 
@@ -53,7 +53,7 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
 
         w_g(s) = q_g(s) + gB + pi * sv(s);
         w_ng(s) = q_ng(s);
-        p1 = stableSigmoid(w_g(s), w_ng(s));
+        p1 = stableSoftmax(w_g(s), w_ng(s));
 
         a = returnAction(p1);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
@@ -120,7 +120,7 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
             w_g(s) = q_g(s) + gB + pi * sv(s);
             w_ng(s) = q_ng(s);
             
-            p1 = stableSigmoid(w_g(s), w_ng(s));
+        p1 = stableSoftmax(w_g(s), w_ng(s));
             
             if isHC
                 HCcell{hc, s}(end+1) = p1;
