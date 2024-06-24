@@ -117,7 +117,7 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
             w_g(s) = q_g(s) + gB;
             w_ng(s) = q_ng(s);
 
-            p1 = stableSigmoid(w_g(s), w_ng(s));
+            p1 = stableSoftmax(w_g(s), w_ng(s));
             
             if isHC
                 HCcell{hc, s}(end+1) = p1;

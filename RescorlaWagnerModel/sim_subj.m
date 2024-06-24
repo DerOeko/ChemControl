@@ -24,12 +24,23 @@ function [subj] = sim_subj(B, T)
 
 % ----------------------------------------------------------------------- %
 %% Settings:
-B = 8; % number of blocks + 1 calibration block
-T = 40; % number of trials in a block
 cP = 0.8; % control probability
 rP = 0.8; % reward probability
 numControl = round(cP * T); % number of trials with control
 numRewarded = round(rP * T); % number of rewarded trials
+controllabilitySchedules = [
+    1, 2, 2, 1, 2, 1, 1, 2;
+    2, 1, 2, 2, 1, 2, 1, 1;
+    1, 2, 1, 2, 2, 1, 2, 1;
+    1, 1, 2, 1, 2, 2, 1, 2;
+    2, 1, 1, 2, 1, 2, 2, 1;
+    1, 2, 1, 1, 2, 1, 2, 2;
+    2, 1, 2, 1, 1, 2, 1, 2;
+    2, 2, 1, 2, 1, 1, 2, 1;
+    1, 1, 2, 2, 1, 2, 1, 2;
+    2, 2, 1, 1, 2, 1, 2, 1;
+    1, 2, 1, 2, 1, 2, 1, 2;
+];
 
 % Cues and how often they repeat
 cond = [1, 2, 3, 4]; 
@@ -43,9 +54,6 @@ randLC = zeros(B, T);
 randomReward = zeros(B, T);
 controllability = zeros(B, T);
 
-cArr = [1 1 1 1 0 0 2 2]; 
-cArr = cArr(randperm(length(cArr)));
-
 sVec = repelem(cond, rep);
 sVec = sVec(randperm(length(stimuli)));
 cali_stimuli(:) = sVec;
@@ -57,6 +65,13 @@ cVec = cVec(randperm(T));
 cali_randLC = zeros(1, T);
 cali_randHC(:) = cVec;
 cali_randLC(:) = 2;
+
+% Select a random controllability schedule
+selected_schedule_idx = randi(size(controllabilitySchedules, 1));
+cArr = controllabilitySchedules(selected_schedule_idx, :);
+two_indices = find(cArr == 2);
+selected_indices = randsample(two_indices, 2);
+cArr(selected_indices) = 0;
 
 for b = 1:B
     sVec = repelem(cond, rep);
@@ -99,6 +114,8 @@ subj.cali_stimuli = cali_stimuli;
 subj.cali_randReward = cali_randReward;
 subj.cali_randHC = cali_randHC;
 subj.cali_randLC = cali_randLC;
+subj.selected_schedule_idx = selected_schedule_idx;
+subj.selected_schedule = cArr;
 
 end
 

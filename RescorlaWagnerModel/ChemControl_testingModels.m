@@ -70,8 +70,8 @@ end
 
 %% 02) SIMULATE
 %% 02a) Run settings
-nRuns = 100;
-nTrials = 160;
+nRuns = 50;
+nTrials = 80;
 nBlocks = 8;
 nStates = 4;
 HCmeans = zeros(nTrials/4, 4, nRuns);

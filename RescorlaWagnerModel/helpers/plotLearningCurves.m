@@ -7,8 +7,8 @@ function figHandle = plotLearningCurves(occurrenceMeans, model_name, isHC, figHa
     end
     
     controlString = fi(isHC, "High Control", "Low Control");
-
-    T = 40;
+    sz = size(occurrenceMeans);
+    T = sz(1) * sz(2);
     
     if isempty(figHandle)
         figHandle = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
