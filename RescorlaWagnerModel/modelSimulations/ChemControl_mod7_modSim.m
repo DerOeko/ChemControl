@@ -35,6 +35,7 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
     LCcell = cell(B/2, S); % Store go probs in LC
     actions = zeros(B, T);
     outcomes = zeros(B, T);
+    omegas = zeros(B, T);
 
     q0 = [0.5 -0.5 0.5 -0.5];
     hc = 0;
@@ -125,6 +126,7 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
         omega = 1/(1+exp(-beta*(Omega-thres)));
 
         for t = 1:T
+            omegas(b, t) = omega;
             s = stimuli(b, t);
             isWinState = mod(s, 2);
             randHC = randHCs(b, t); % outcome matters (1, 0, 2)
@@ -180,4 +182,5 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
     out.randomRewards = randomRewards;
     out.actions = actions;
     out.outcomes = outcomes;
+    out.omegas = omegas;
 end

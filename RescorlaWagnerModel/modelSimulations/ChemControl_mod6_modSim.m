@@ -35,6 +35,7 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
     LCcell = cell(B/2, S); % Store go probs in LC
     actions = zeros(B, T);
     outcomes = zeros(B, T);
+    omegas = zeros(B, T);
 
     q0 = [0.5 -0.5 0.5 -0.5];
     hc = 0;
@@ -81,7 +82,7 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
 
         ratio = alpha_q/(alpha_q+alpha_v);
         omega = 1/(1+exp(-slope*((omega + kappa * (ratio - 0.5))-0.5)));
-
+        
         counter = updateRewardLossCounter(s, o);
 
         rewardLossCounter = rewardLossCounter + counter;
@@ -126,6 +127,7 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
         omega = 1/(1+exp(-slope*((0.5 + kappa * (- 0.5))-0.5)));
 
         for t = 1:T
+            omegas(b, t) = omega;
             s = stimuli(b, t);
             isWinState = mod(s, 2);
             randHC = randHCs(b, t); % outcome matters (1, 0, 2)
@@ -142,7 +144,7 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
             w_ng(s) = (1-omega) * q_ng(s);
 
 
-        p1 = stableSoftmax(w_g(s), w_ng(s));
+            p1 = stableSoftmax(w_g(s), w_ng(s));
             
             if isHC
                 HCcell{hc, s}(end+1) = p1;
@@ -184,6 +186,6 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
     out.randomRewards = randomRewards;
     out.actions = actions;
     out.outcomes = outcomes;
-
+    out.omegas = omegas;
 end
 

@@ -70,11 +70,37 @@ end
 
 %% 02) SIMULATE
 %% 02a) Run settings
+controllabilitySchedules = [
+    1, 2, 2, 1, 2, 1, 1, 2;
+    2, 1, 2, 2, 1, 2, 1, 1;
+    1, 2, 1, 2, 2, 1, 2, 1;
+    1, 1, 2, 1, 2, 2, 1, 2;
+    2, 1, 1, 2, 1, 2, 2, 1;
+    1, 2, 1, 1, 2, 1, 2, 2;
+    2, 1, 2, 1, 1, 2, 1, 2;
+    2, 2, 1, 2, 1, 1, 2, 1;
+    1, 1, 2, 2, 1, 2, 1, 2;
+    2, 2, 1, 1, 2, 1, 2, 1;
+    1, 2, 1, 2, 1, 2, 1, 2;
+];
 nRuns = 50;
-nTrials = 80;
+nTrials = 40;
 nBlocks = 8;
 nStates = 4;
+nSchedules = 11;
 HCmeans = zeros(nTrials/4, 4, nRuns);
+omegas6 = cell(nSchedules, 1);
+omegas7 = cell(nSchedules, 1);
+cPs = zeros(nSchedules, nTrials*nBlocks);
+for iSchedule = 1:nSchedules
+    for iB = 1:nBlocks
+        if controllabilitySchedules(iSchedule, iB) == 1
+            cPs(iSchedule, ((iB-1)*nTrials)+1:iB*nTrials+1)= 0.8;
+        else
+            cPs(iSchedule, ((iB-1)*nTrials)+1:iB*nTrials+1)=0.2;
+        end
+    end
+end
 fig1 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 
 %% 02b) Run simulation and plot
@@ -84,6 +110,26 @@ for iMod = 1:nMod
     for iRun = 1:nRuns
         subj = sim_subj(nBlocks, nTrials);
         out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
+        if iMod == 6 || iMod == 7
+            % Store omegas for models 6 and 7
+            schedule_idx = subj.selected_schedule_idx;
+            reshaped_omegas = reshape(out.omegas', [nTrials*nBlocks, 1]);
+            
+
+            if iMod == 6
+                if isempty(omegas6{schedule_idx})
+                    omegas6{schedule_idx} = reshaped_omegas;
+                else
+                    omegas6{schedule_idx} = [omegas6{schedule_idx}, reshaped_omegas];
+                end
+            elseif iMod == 7
+                if isempty(omegas7{schedule_idx})
+                    omegas7{schedule_idx} = reshaped_omegas;
+                else
+                    omegas7{schedule_idx} = [omegas7{schedule_idx}, reshaped_omegas];
+                end            
+            end
+        end
         HCcell = out.HCcell;
         HCoccurrences = zeros(nTrials/4, 4);
         for s = 1:4
@@ -101,6 +147,22 @@ for iMod = 1:nMod
     plotLearningCurves(HCmeans, sprintf("M%02d", iMod), true, fig1);
 end
 
+%% Plot average Omega
+averageOmegas6 = cell(nSchedules, 1);
+averageOmegas7 = cell(nSchedules, 1);
+
+for schedule_idx = 1:nSchedules
+    if ~isempty(omegas6{schedule_idx})
+        % Average across columns for schedule_idx
+        averageOmegas6{schedule_idx} = mean(omegas6{schedule_idx}, 2);
+    end
+    if ~isempty(omegas7{schedule_idx})
+        % Average across columns for schedule_idx
+        averageOmegas7{schedule_idx} = mean(omegas7{schedule_idx}, 2);
+    end
+end
+
+plotOmegas(averageOmegas6, averageOmegas7, cPs);
 %% Check yoked
 arrs = zeros(1, nRuns);
 alrs = zeros(1, nRuns);
