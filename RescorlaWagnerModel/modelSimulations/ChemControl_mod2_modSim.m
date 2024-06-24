@@ -16,6 +16,10 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
     randomRewards = subj.randomReward; % 1 or 0
     randHCs = subj.randHC; % 1, 0, 2
     randLCs = subj.randLC; % 1, 0, 2
+    cali_stimuli = subj.cali_stimuli;
+    cali_randHC = subj.cali_randHC;
+    cali_randLC = subj.cali_randHC;
+    cali_randRewards = subj.cali_randReward;
 
     % Data dimensions:
     B = size(stimuli, 1); % Number of blocks
@@ -31,10 +35,66 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
     q0 = [0.5 -0.5 0.5 -0.5];
     hc = 0;
     lc = 0;
+
+    %% Run calibration block
+    rewardLossCounter = zeros([1, 2]);
+    q_g = q0 * rho;
+    q_ng = q0 * rho;
+    w_g = q0 * rho;
+    w_ng = q0 * rho;
+    isHC = 1;
+    for t = 1:T
+        s = cali_stimuli(t);
+        randHC = cali_randHC(t);
+        randLC = cali_randLC(t);
+        isRewarded = cali_randRewards(t);
+
+        w_g(s) = q_g(s) + gB;
+        w_ng(s) = q_ng(s);
+        p1 = stableSigmoid(w_g(s), w_ng(s));
+
+        a = returnAction(p1);
+        o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
+
+        if a==1
+            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+        elseif a==2
+            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+        end
+
+        counter = updateRewardLossCounter(s, o);
+
+        rewardLossCounter = rewardLossCounter + counter;
+    end
+   
+    M = rewardLossCounter/(T/2);
+    averageRewardRate = M(1);
+    averageLossRate = M(2);
+    numRewarded = round(averageRewardRate * T); % number of rewarded trials
+    numAvoided = round(averageLossRate * T);
+
     for b = 1:B
-        isHC = controllabilities(b, 1);
+        switch controllabilities(b, 1)
+            case 1
+                isHC = true;
+                isLC = false;
+                isYoked = false;
+            case 0
+                isHC = false;
+                isLC = true;
+                isYoked = false;
+            case 2
+                isHC = false;
+                isLC = true;
+                isYoked = true;
+
+                rewardedVec = [ones(1, numRewarded) zeros(1, T-numRewarded, 1)];
+                rewardedVec = rewardedVec(randperm(length(rewardedVec)));
+                avoidedVec = [ones(1, numAvoided) zeros(1, T-numAvoided, 1)];
+                avoidedVec = avoidedVec(randperm(length(avoidedVec)));
+        end
         hc = hc + isHC;
-        lc = lc + ~isHC;
+        lc = lc + isLC;
         
         q_g = q0 * rho;
         q_ng = q0 * rho;
@@ -43,14 +103,21 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
 
         for t = 1:T
             s = stimuli(b, t);
+            isWinState = mod(s, 2);
             randHC = randHCs(b, t); % outcome matters (1, 0, 2)
             randLC = randLCs(b, t); % outcome doesn't matter (1, 0, 2)
-            isRewarded = randomRewards(b, t);
+            if ~isYoked
+                isRewarded = randomRewards(b, t);
+            elseif isWinState && isYoked
+                isRewarded = rewardedVec(t);
+            elseif ~isWinState && isYoked
+                isRewarded = avoidedVec(t);
+            end
 
             w_g(s) = q_g(s) + gB;
             w_ng(s) = q_ng(s);
 
-            p1 = 1/(1+exp(w_ng(s)-w_g(s)));
+            p1 = stableSigmoid(w_g(s), w_ng(s));
             
             if isHC
                 HCcell{hc, s}(end+1) = p1;

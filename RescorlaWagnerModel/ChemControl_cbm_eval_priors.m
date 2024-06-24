@@ -53,7 +53,7 @@ modelFiles = dir(fullfile(dirs.models, '*.m'));
 % Set nMod to the number of .m files
 nMod = length(modelFiles);
 
-nParams = [2 3 4 4 4 7 7]; % Number of parameters per model
+nParams = [2 3 4 4 4 6 6]; % Number of parameters per model
 selMod = 7; % Which model?
 nParam = nParams(selMod); % Number of params for this model
 
@@ -66,110 +66,112 @@ modelHandle = str2func(sprintf('ChemControl_mod%d', selMod));
 fprintf('Selected model %d and number of parameters %d\n', selMod, nParam)
 
 %% 01a) Prior finding with Grid Search
-% Define ranges for grid search
-mean_range = -2:0.5:2; % Range of means for grid search
-variance_range = 1:1:10; % Range of variances for grid search
+numSamples = 1000; % How many parameter samples for each parameter?
+numSampleParam = 100; % From each parameter samples, how many to take
+nSub = 1; % How many simulations for each parameter combination?
 
-eps_mean    = 0; eps_v      = 5; % Learning rate (sigmoid)
-rho_mean    = 2; rho_v      = 3; % Discount factor (exp)
-gB_mean     = 0; gB_v       = 10; % Go bias (identity)
-slope_mean  = 2; slope_v    = 3; % Slope (exp)
+% Define ranges for grid search
+sigmoid_v_range = 1:2:10; % Range of variances for sigmoid transformation
+exp_mean_range = -2:1:2; % Range of means for exponential transformation
+exp_v_range = 1:2:10; % Range of variances for exponential transformation
 
 % Initialize result storage
-result_rows = length(mean_range) * length(variance_range);
-recoverability_scores = zeros(result_rows, 3);
+result_rows = length(sigmoid_v_range) * length(exp_mean_range) * length(exp_v_range);
+recoverability_scores = zeros(result_rows, 4);
 
 % Initialize row counter
 row_counter = 1;
-for mu = 1:length(mean_range)
-    for var = 1:length(variance_range)
-        % Set current priors
-        current_mean = mean_range(mu);
-        current_var = variance_range(var);
-        
-        % Update priors for the current combination
-        priors{6}   = struct('mean', [eps_mean, rho_mean, gB_mean, current_mean, current_mean, current_mean, slope_mean], ...
-                            'variance', [eps_v, rho_v, gB_v, current_var, current_var, current_var, slope_v]); % prior_model_dynamicOmega1
-        eps     = normrnd(eps_mean,   sqrt(eps_v), [numSamples, 1]);
-        rhos    = normrnd(rho_mean,   sqrt(rho_v), [numSamples, 1]);
-        gBs     = normrnd(gB_mean,    sqrt(gB_v), [numSamples, 1]);
-        o0s     = normrnd(current_mean,    sqrt(current_var), [numSamples, 1]);
-        alphas  = normrnd(current_mean, sqrt(current_var), [numSamples, 1]);
-        kaps    = normrnd(current_mean,   sqrt(current_var), [numSamples, 1]);
-        slopes  = normrnd(slope_mean, sqrt(slope_v), [numSamples, 1]);
-        
-        % Create parameter combinations
-        paramCombinations = [randsample(eps, numSampleParam, true), ...
-                             randsample(rhos, numSampleParam, true), ...
-                             randsample(gBs, numSampleParam, true), ...
-                             randsample(o0s, numSampleParam, true), ...
-                             randsample(alphas, numSampleParam, true), ...
-                             randsample(kaps, numSampleParam, true), ...
-                             randsample(slopes, numSampleParam, true)];
+for sv = 1:length(sigmoid_v_range)
+    for em = 1:length(exp_mean_range)
+        for ev = 1:length(exp_v_range)
+            % Set current priors
+            current_sigmoid_v = sigmoid_v_range(sv);
+            current_exp_mean = exp_mean_range(em);
+            current_exp_v = exp_v_range(ev);
 
-        numCombinations = uint64(size(paramCombinations, 1));
-        % Run parameter recovery
-        retrievedParams = zeros(numCombinations, nParam);
+             % Update priors for the current combination
+            priors{7} = struct('mean', [eps_mean, rho_mean, gB_mean, 0, current_exp_mean, 0], ...
+                               'variance', [eps_v, rho_v, gB_v, current_sigmoid_v, current_exp_v, current_sigmoid_v]); % prior_model_dynamicOmega2
+            
+            eps = normrnd(eps_mean, sqrt(eps_v), [numSamples, 1]);
+            rhos = normrnd(rho_mean, sqrt(rho_v), [numSamples, 1]);
+            gBs = normrnd(gB_mean, sqrt(gB_v), [numSamples, 1]);
+            aOs = normrnd(0, sqrt(current_sigmoid_v), [numSamples, 1]);
+            bOs = normrnd(current_exp_mean, sqrt(current_exp_v), [numSamples, 1]);
+            tOs = normrnd(0, sqrt(current_sigmoid_v), [numSamples, 1]);
+                    
+            % Create parameter combinations
+            paramCombinations = [randsample(eps, numSampleParam, true), ...
+                                 randsample(rhos, numSampleParam, true), ...
+                                 randsample(gBs, numSampleParam, true), ...
+                                 randsample(aOs, numSampleParam, true), ...
+                                 randsample(bOs, numSampleParam, true), ...
+                                 randsample(tOs, numSampleParam, true)];
 
-        parfor iComb = 1:numCombinations
-            parameters = paramCombinations(iComb, 1:nParam);
-            data = cell(nSub, 1);
-        
-            for iSub = 1:nSub
-                % Extract subject data:
-                fprintf("Start subject %03d\n", iSub)
-                subj = sim_subj;
-                % Simulate:
-                out = modelSimHandle(parameters, subj); 
-                data{iSub} = struct("stimuli", out.stimuli, "actions", out.actions, "outcomes", out.outcomes);
+            numCombinations = uint64(size(paramCombinations, 1));
+            % Run parameter recovery
+            retrievedParams = zeros(numCombinations, nParam);
+
+            parfor iComb = 1:numCombinations
+                parameters = paramCombinations(iComb, 1:nParam);
+                data = cell(nSub, 1);
+            
+                for iSub = 1:nSub
+                    % Extract subject data:
+                    fprintf("Start subject %03d\n", iSub)
+                    subj = sim_subj;
+                    % Simulate:
+                    out = modelSimHandle(parameters, subj); 
+                    data{iSub} = struct("stimuli", out.stimuli, "actions", out.actions, "outcomes", out.outcomes);
+                end
+            
+                temp_folder = tempname;
+                mkdir(temp_folder);
+                fname = fullfile(temp_folder, 'lap.mat');
+            
+                cbm_lap(data, modelHandle, priors{selMod}, fname);
+                d = load(fname);
+                params = d.cbm.output.parameters;
+            
+                % Store temporary results into the final matrix
+                retrievedParams(iComb, :) = params(:);
             end
-        
-            temp_folder = tempname;
-            mkdir(temp_folder);
-            fname = fullfile(temp_folder, 'lap.mat');
-        
-            cbm_lap(data, modelHandle, priors{selMod}, fname);
-            d = load(fname);
-            params = d.cbm.output.parameters;
-        
-            % Store temporary results into the final matrix
-            retrievedParams(iComb, :) = params(:);
-        end
 
-        % Calculate recoverability score (correlation)
-        corr_values = zeros(1, nParam);
-        for iParam = 1:nParam
-            corr_values(iParam) = corr(paramCombinations(:, iParam), retrievedParams(:, iParam));
+            % Calculate recoverability score (correlation)
+            corr_values = zeros(1, nParam);
+            for iParam = 1:nParam
+                corr_values(iParam) = corr(paramCombinations(:, iParam), retrievedParams(:, iParam));
+            end
+            avg_correlation = mean(corr_values);
+            
+            % Store the current priors and recoverability score
+            recoverability_scores(row_counter, :) = [current_sigmoid_v, current_exp_mean, current_exp_v, avg_correlation];
+            row_counter = row_counter + 1;
         end
-        avg_correlation = mean(corr_values);
-
-        % Store the current priors and recoverability score
-        recoverability_scores(row_counter, :) = [current_mean, current_var, avg_correlation];
-        row_counter = row_counter + 1;
     end
 end
+
 % Save results to a file
-save(fullfile(dirs.results, 'recoverability_scores.mat'), 'recoverability_scores');
+save(fullfile(dirs.results, sprintf('recoverability_scores_mod%02d.mat', selMod)), 'recoverability_scores');
 
 %% 01b) Summary statistics
-T = load(fullfile(dirs.results, 'recoverability_scores.mat'));
+T = load(fullfile(dirs.results, sprintf('recoverability_scores_mod%02d.mat', selMod)));
 T = T.recoverability_scores;
-low_recovery = T(T(:, 3) <= 0.5, :);
+low_recovery = T(T(:, 4) <= 0.5, :);
 
-summary_stats_mean = array2table(mean(low_recovery), 'VariableNames', {'mean', 'var', 'score'});
+summary_stats_mean = array2table(mean(low_recovery), 'VariableNames', {'sigmoid_v', 'exp_mean', 'exp_v', 'score'});
 disp('Mean values for parameters with recoverability score below 0.5:');
 disp(summary_stats_mean);
 
-summary_stats_median = array2table(median(low_recovery), 'VariableNames', {'mean', 'var', 'score'});
+summary_stats_median = array2table(median(low_recovery), 'VariableNames', {'sigmoid_v', 'exp_mean', 'exp_v', 'score'});
 disp('Median values for parameters with recoverability score below 0.5:');
 disp(summary_stats_median);
 
-
-summary_stats_mean = array2table(mean(T), 'VariableNames', {'mean', 'var', 'score'});
+summary_stats_mean = array2table(mean(T), 'VariableNames', {'sigmoid_v', 'exp_mean', 'exp_v', 'score'});
 disp('Mean values for parameters with recoverability score above 0.5:');
 disp(summary_stats_mean);
 
-summary_stats_median = array2table(median(T), 'VariableNames', {'mean', 'var', 'score'});
+summary_stats_median = array2table(median(T), 'VariableNames', {'sigmoid_v', 'exp_mean', 'exp_v', 'score'});
 disp('Median values for parameters with recoverability score above 0.5:');
 disp(summary_stats_median);
 
@@ -178,21 +180,20 @@ disp(summary_stats_median);
 % Settings:
 fprintf('>>> Set parameter recovery correlation settings\n')
 numSamples = 1000; % How many parameter samples for each parameter?
-numSampleParam = 10000; % From each parameter samples, how many to take
+numSampleParam = 100; % From each parameter samples, how many to take
 
 % Define means and variances for each parameter
-eps_mean    = 0; eps_v      = 10; % Learning rate (sigmoid)
+eps_mean    = 0; eps_v      = 2; % Learning rate (sigmoid)
 rho_mean    = 2; rho_v      = 3; % Discount factor (exp)
-gB_mean     = 0; gB_v       = 10; % Go bias (identity)
-pi_mean     = 0; pi_v       = 10; % Pavlovian bias (identity)
-o_mean      = 0; o_v        = 5; % Omega (sigmoid)
-o0_mean     = 5; o0_v       = 100; % Initial omega (sigmoid)
+gB_mean     = 0; gB_v       = 3; % Go bias (identity)
+pi_mean     = 0; pi_v       = 3; % Pavlovian bias (identity)
+o_mean     = 5; o_v       = 3; % Omega (sigmoid)
 alpha_mean  = 0; alpha_v    = 5; % Alpha (sigmoid)
 kap_mean    = 0; kap_v      = 5; % Kappa (sigmoid)
 slope_mean  = 2; slope_v    = 3; % Slope (exp)
-aO_mean     = 0; aO_v       = 100; % Alpha Omega (sigmoid)
-bO_mean     = 2; bO_v       = 100; % Beta Omega (exp)
-tO_mean     = 0; tO_v       = 100; % Theta Omega (scaled sigmoid)
+aO_mean     = 0; aO_v       = 0.25; % Alpha Omega (sigmoid)
+bO_mean     = 0; bO_v       = 0.25; % Beta Omega (exp)
+tO_mean     = 0; tO_v       = 0.25; % Theta Omega (scaled sigmoid)
 
 % Generate samples for each parameter
 eps     = normrnd(eps_mean,   sqrt(eps_v), [numSamples, 1]);
@@ -200,7 +201,6 @@ rhos    = normrnd(rho_mean,   sqrt(rho_v), [numSamples, 1]);
 gBs     = normrnd(gB_mean,    sqrt(gB_v), [numSamples, 1]);
 pis     = normrnd(pi_mean,    sqrt(pi_v), [numSamples, 1]);
 os      = normrnd(o_mean,     sqrt(o_v), [numSamples, 1]);
-o0s     = normrnd(o0_mean,    sqrt(o0_v), [numSamples, 1]);
 alphas  = normrnd(alpha_mean, sqrt(alpha_v), [numSamples, 1]);
 kaps    = normrnd(kap_mean,   sqrt(kap_v), [numSamples, 1]);
 slopes  = normrnd(slope_mean, sqrt(slope_v), [numSamples, 1]);
@@ -214,7 +214,6 @@ paramCombinations = [randsample(eps, numSampleParam, true), ...
                      randsample(gBs, numSampleParam, true), ...
                      randsample(pis, numSampleParam, true), ...
                      randsample(os, numSampleParam, true), ...
-                     randsample(o0s, numSampleParam, true), ...
                      randsample(alphas, numSampleParam, true), ...
                      randsample(kaps, numSampleParam, true), ...
                      randsample(slopes, numSampleParam, true), ...
@@ -237,9 +236,9 @@ transform{1} = {@sigmoid, @exp};
 transform{2} = {@sigmoid, @exp, @(x) x};
 transform{3} = {@sigmoid, @exp, @(x) x, @(x) x};
 transform{4} = {@sigmoid, @exp, @(x) x, @(x) x};
-transform{5} = {@sigmoid, @exp, @(x) x, @sigmoid};
-transform{6} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid, @sigmoid, @exp};
-transform{7} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid, @exp, @scaledSigmoid};
+transform{5} = {@sigmoid, @exp, @(x) x};
+transform{6} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid, @exp};
+transform{7} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid};
 
 % Priors:
 fprintf('>>> Initialize unconstraining parameter priors\n')
@@ -258,11 +257,11 @@ priors{4}   = struct('mean', [eps_mean, rho_mean, gB_mean, pi_mean], ...
 priors{5}   = struct('mean', [eps_mean, rho_mean, gB_mean, o_mean], ...
                     'variance', [eps_v, rho_v, gB_v, o_v]); % prior_model_fixedOmega
 
-priors{6}   = struct('mean', [eps_mean, rho_mean, gB_mean, o0_mean, alpha_mean, kap_mean, slope_mean], ...
-                    'variance', [eps_v, rho_v, gB_v, o0_v, alpha_v, kap_v, slope_v]); % prior_model_dynamicOmega1
+priors{6}   = struct('mean', [eps_mean, rho_mean, gB_mean, alpha_mean, kap_mean, slope_mean], ...
+                    'variance', [eps_v, rho_v, gB_v, alpha_v, kap_v, slope_v]); % prior_model_dynamicOmega1
 
-priors{7}   = struct('mean', [eps_mean, rho_mean, gB_mean, o0_mean, aO_mean, bO_mean, tO_mean], ...
-                    'variance', [eps_v, rho_v, gB_v, o0_v, aO_v, bO_v, tO_v]); % prior_model_dynamicOmega2
+priors{7}   = struct('mean', [eps_mean, rho_mean, gB_mean, aO_mean, bO_mean, tO_mean], ...
+                    'variance', [eps_v, rho_v, gB_v, aO_v, bO_v, tO_v]); % prior_model_dynamicOmega2
 
 % Define parameter indices for each model
 paramIndices = { [1, 2], ...
@@ -270,8 +269,8 @@ paramIndices = { [1, 2], ...
                  [1, 2, 3, 4], ...
                  [1, 2, 3, 4], ...
                  [1, 2, 3, 5], ...
-                 [1, 2, 3, 6, 7, 8, 9], ...
-                 [1, 2, 3, 6, 10, 11, 12]};
+                 [1, 2, 3, 6, 7, 8], ...
+                 [1, 2, 3, 9, 10, 11]};
 
 % Select the correct parameter indices for the current model
 currentParamIndices = paramIndices{selMod};
@@ -309,7 +308,7 @@ parfor iComb = 1:numCombinations
     retrievedParams(iComb, :) = params(:);
 end
 
-%% 01d) Plotting of results with correlation lines
+% 01d) Plotting of results with correlation lines
 figure;
 sgtitle('Parameter Recovery Analysis');
 
@@ -320,8 +319,8 @@ paramNames = {{'\epsilon', '\rho'},...
     {'\epsilon', '\rho', 'goBias', '\pi'},...
     {'\epsilon', '\rho', 'goBias', '\pi'},...
     {'\epsilon', '\rho', 'goBias', '\omega'},...
-    {'\epsilon', '\rho', 'goBias', '\omega_{init}', '\alpha', '\kappa', 'slope'},...
-    {'\epsilon', '\rho', 'goBias', '\omega_{init}', '\alpha_{\Omega}','\beta_{\Omega}', 'thres_{\Omega}'}};
+    {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', 'slope'},...
+    {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', 'thres_{\Omega}'}};
 
 for i = 1:nParam
     iParam = currentParamIndices(i);
@@ -334,6 +333,12 @@ for i = 1:nParam
     yfit = polyval(p, paramCombinations(:, iParam));
     % Plot the linear fit
     plot(paramCombinations(:, iParam), yfit, 'LineWidth', 2);
+
+    % Plot the optimal line (y = x)
+    xLimits = xlim;
+    yLimits = ylim;
+    plot(xLimits, xLimits, 'k--', 'LineWidth', 2); % Diagonal optimal line
+
     xlabel(sprintf('True %s', paramNames{selMod}{i}));
     ylabel(sprintf('Retrieved %s', paramNames{selMod}{i}));
     title(sprintf('True vs. Retrieved %s, \ncorr: %.02f', paramNames{selMod}{i}, corr(paramCombinations(:, iParam), retrievedParams(:, i))));

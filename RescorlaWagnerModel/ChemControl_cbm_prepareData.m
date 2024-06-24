@@ -36,8 +36,6 @@ if ~exist(dirs.target, 'dir'); mkdir(dirs.target); end
 fprintf("Initialize settings\n")
 
 % Fixed input settings:
-nCueConditions = 4; % number of cue conditions, here 4 for Go2Win, Go2Avoid, NoGo2Win, NoGo2Avoid
-nExemplar = 10; % how often each cue is shown 
 nBlocks = 8; % how many blocks in one experiment
 nTrials = 40; % how many trials in a block
 

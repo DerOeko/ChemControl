@@ -3,10 +3,9 @@ function [loglik] = ChemControl_mod7(parameters,subj)
 ep = sigmoid(parameters(1));
 rho = exp(parameters(2));
 goBias = parameters(3);
-oi = sigmoid(parameters(4));
-alpha = sigmoid(parameters(5));
-beta = exp(parameters(6));
-thres = scaledSigmoid(parameters(7));
+alpha = sigmoid(parameters(4));
+beta = exp(parameters(5));
+thres = scaledSigmoid(parameters(6));
 
 actions = subj.actions;
 outcomes = subj.outcomes;
@@ -25,8 +24,8 @@ for b = 1:B
     q_g = initQ;
     q_ng = initQ;
     sv = initV;
-    omega = oi;
     Omega = 0;
+    omega = 1/(1+exp(-beta*(-thres)));
     for t=1:T
         a = actions(b, t);
         o = outcomes(b, t);
@@ -55,7 +54,6 @@ for b = 1:B
         end
 
         Omega = Omega + alpha*(q_pe - v_pe - Omega);
-
         omega = 1/(1+exp(-beta*(Omega-thres)));
     end
 end

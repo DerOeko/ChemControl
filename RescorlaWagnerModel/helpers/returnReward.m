@@ -1,13 +1,15 @@
 function o = returnReward(s, a, isHC, randLC, randHC, isRewarded)
     isWinState = mod(s, 2);
+
     isCorrectAction = a == getCorrectAction(s);
+
     if isHC % high control block
             if randHC == 1 % outcome matters
                 if isCorrectAction % correct action
                     if isRewarded % correct actions are rewarded
                         if isWinState % win state
                             o = 1;
-                        else
+                        else 
                             o = 0; % loss state (neutral outcome, if correct action)
                         end % End of win state check
                     else % no reward even if correct response

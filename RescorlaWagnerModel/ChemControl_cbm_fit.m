@@ -1,4 +1,4 @@
-% ChemControl_cbm_fit.m
+% ChemControl_fit.m
 
 % This is an interactive script---execute it step-by-step.
 % It fits a series of computational reinforcement learning models using the
@@ -34,7 +34,13 @@ if ~exist(dirs.lap, 'dir'); mkdir(dirs.lap); end
 dirs.hbi     = fullfile(dirs.results, 'HBI_Results');
 if ~exist(dirs.hbi, 'dir'); mkdir(dirs.hbi); end
 
+dirs.stan = fullfile(dirs.results, 'Stan_Results');
+if ~exist(dirs.stan, 'dir'); mkdir(dirs.stan); end
+
 dirs.models         = fullfile(dirs.root, 'models');
+
+dirs.stan_models = fullfile(dirs.root, 'stan_models');
+if ~exist(dirs.stan_models, 'dir'); mkdir(dirs.stan_models); end
 
 % ----------------------------------------------------------------------- %
 %% 00b) Settings:
@@ -59,6 +65,8 @@ fdata = load(inputFile);
 data = fdata.data;
 nSub = length(data);
 
+%% 01a) Alternative a) Fitting with Stan
+%% 01b) Alternative b) Fitting with CBM
 % Priors:
 fprintf('Initialize priors\n')
 
@@ -67,8 +75,8 @@ priors{2} = struct('mean', [0 2 0], 'variance', [3 5 10]); % prior_model_goBias
 priors{3} = struct('mean', [0 2 0 0], 'variance', [3 5 10 10]); % prior_model_fixedPavlov
 priors{4} = struct('mean', [0 2 0 0], 'variance', [3 5 10 10]); % prior_model_dynamicPavlov
 priors{5} = struct('mean', [0 2 0 0], 'variance', [3 5 10 3]); % prior_model_fixedOmega
-priors{6} = struct('mean', [0 2 0 0 0 0 2], 'variance', [3 5 10 3 3 3 5]); % prior_model_dynamicOmega1
-priors{7} = struct('mean', [0 2 0 0 0 2 0], 'variance', [3 5 10 3 3 5 3]); % prior_model_dynamicOmega2
+priors{6} = struct('mean', [0 2 0 0 0 2], 'variance', [3 5 10 3 3 5]); % prior_model_dynamicOmega1
+priors{7} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
 
 % Output names:
 fprintf("Initialize output file names\n")
@@ -79,7 +87,7 @@ for iMod = 1:nMod
 end
 
 % ----------------------------------------------------------------------- %
-%% 00e) Check models in dry run:
+% 01b) Check models in dry run:
 
 fprintf('Test models (dry run)\n')
 subj1 = data{1};
@@ -87,7 +95,7 @@ subj1 = data{1};
 fprintf(">>>>>  Test with random values\n")
 % a) Random parameter values:
 for iMod = 1:nMod
-    parameters = randn(1, 7);
+    parameters = randn(1, 6);
     F1 = eval(sprintf('ChemControl_mod%d(parameters, subj1)', iMod));
     fprintf('Model %02d: loglik = %f\n', iMod, F1);
 end
@@ -95,13 +103,13 @@ end
 fprintf(">>>>>  Test with extreme values\n")
 % b) Extreme parameter values:
 for iMod = 1:nMod
-    parameters = [-10 10 -10 10 10 10 10];
+    parameters = [-10 10 -10 10 10 10];
     F1 = eval(sprintf('ChemControl_mod%d(parameters, subj1)', iMod));
     fprintf('Model %02d: loglik = %f\n', iMod, F1);
 end
 
 % ----------------------------------------------------------------------- %
-%% 1a) LaPlace approximation (cbm_lap):
+% 1c) LaPlace approximation (cbm_lap):
 
 % All models are fit non-hierarchically.
 
@@ -113,7 +121,7 @@ for iMod = 1:nMod
 end
 
 % ----------------------------------------------------------------------- %
-%% 1b) Evaluate LAP fit:
+% 1d) Evaluate LAP fit:
 
 % Output names:
 fprintf('Initialize output file names\n')
@@ -183,7 +191,7 @@ for iMod = modRange
 end
 
 % ----------------------------------------------------------------------- %
-%% 2a) Prepare and fit Hierarchical Bayesian inference (cbm_hbi) per SINGLE model:
+% 1.2a) Prepare and fit Hierarchical Bayesian inference (cbm_hbi) per SINGLE model:
 
 % 1st input: data for all subjects:
 inputFile = fullfile(dirs.results, 'ChemControl_cbm_inputData.mat');
@@ -210,7 +218,7 @@ for iMod = 1:nMod
 end
 
 % ----------------------------------------------------------------------- %
-%% 3a) Prepare Hierarchical Bayesian inference (cbm_hbi) across models:
+% 1.2b) Prepare Hierarchical Bayesian inference (cbm_hbi) across models:
 
 % 1st input: data for all subjects:
 inputFile = fullfile(dirs.results, 'ChemControl_cbm_inputData.mat');
@@ -247,7 +255,7 @@ cbm_hbi(data, models, fcbm_maps, fname_hbi);
 fprintf("Finished fitting :]\n")
 
 % ----------------------------------------------------------------------- %
-%% 3b) Additionally run protected exceedance probability (including null model):
+% 1.2c) Additionally run protected exceedance probability (including null model):
 
 fprintf('Re-run models %s with HBI including null model\n', num2str(modVec, '_%02d'));
 cbm_hbi_null(data, fname_hbi);
@@ -267,7 +275,7 @@ fprintf('Difference                      : %s\n', num2str(xp_dif, '%.02f '));
 fprintf('Finished :-]\n')
 
 % ----------------------------------------------------------------------- %
-%% 3c) Evaluate HBI fit:
+% 1.2d) Evaluate HBI fit:
 
 % Create output name:
 modVec = 1:nMod;
@@ -315,3 +323,5 @@ fprintf('Protected exceedance probability:\n')
 cbm.output.protected_exceedance_prob
 
 % END OF FILE.
+
+

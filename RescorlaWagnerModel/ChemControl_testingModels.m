@@ -40,7 +40,7 @@ nMod = length(dir(fullfile(dirs.models, "*.m")));
 %% 01a) Alternative A: Load model fitted with LAP:
 
 parType = 'lap';
-
+selMod = 1;
 fname_mod = cell(nMod, 1);
 
 for iMod = 1:nMod
@@ -70,8 +70,8 @@ end
 
 %% 02) SIMULATE
 %% 02a) Run settings
-nRuns = 500;
-nTrials = 40;
+nRuns = 100;
+nTrials = 160;
 nBlocks = 8;
 nStates = 4;
 HCmeans = zeros(nTrials/4, 4, nRuns);
@@ -82,7 +82,7 @@ for iMod = 1:nMod
     subplot(2, ceil(nMod/2), iMod);
     parameters = groupParams{iMod};
     for iRun = 1:nRuns
-        subj = sim_subj();
+        subj = sim_subj(nBlocks, nTrials);
         out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
         HCcell = out.HCcell;
         HCoccurrences = zeros(nTrials/4, 4);
@@ -101,4 +101,14 @@ for iMod = 1:nMod
     plotLearningCurves(HCmeans, sprintf("M%02d", iMod), true, fig1);
 end
 
+%% Check yoked
+arrs = zeros(1, nRuns);
+alrs = zeros(1, nRuns);
 
+for iRun = 1:nRuns
+    subj = sim_subj();
+    parameters = groupParams{1};
+    out = ChemControl_mod1_modSim(parameters, subj);
+    arrs(iRun) = out.arr;
+    alrs(iRun) = out.alr;
+end
