@@ -147,6 +147,163 @@ function [out] = ChemControl_mod4_modSim(parameters, subj)
         end
     end
 
+    % ----------------------------------------------------------------------- %
+    %% Win stay-lose shift:
+
+    win_stay_count = zeros(B, T);
+    lose_shift_count = zeros(B, T);
+    total_wins = zeros(B, 1);
+    total_losses = zeros(B, 1);
+    
+    for b = 1:B
+        for t = 1:T
+            s = stimuli(b, t);
+            current_action = actions(b, t);
+            current_outcome = outcomes(b, t);
+    
+            % Find the next index after 't' where the stimulus 's' appears
+            next_idx = find(stimuli(b, t+1:end) == s, 1) + t;
+    
+            if ~isempty(next_idx) % Ensure there is a next occurrence
+                next_action = actions(b, next_idx);
+    
+                if current_outcome == 1 % Win condition
+                    total_wins(b) = total_wins(b) + 1;
+                    if current_action == next_action
+                        win_stay_count(b, t) = 1;
+                    end
+                elseif current_outcome == -1 % Lose condition
+                    total_losses(b) = total_losses(b) + 1;
+                    if current_action ~= next_action
+                        lose_shift_count(b, t) = 1;
+                    end
+                end
+            end
+        end
+    end
+    
+    % Calculate frequencies for each block and overall
+    wsFreq = sum(win_stay_count, 2) ./ total_wins;
+    lsFreq = sum(lose_shift_count, 2) ./ total_losses;
+    
+    % Aggregate frequencies across blocks
+    owsFreq = sum(sum(win_stay_count)) / sum(total_wins);
+    olsFreq = sum(sum(lose_shift_count)) / sum(total_losses);
+
+    % Cumulative win-stay-lose-shift analysis
+    cumulative_win_stays = zeros(B, T);
+    cumulative_lose_shifts = zeros(B, T);
+    cumulative_wins = zeros(B, T);
+    cumulative_losses = zeros(B, T);
+    
+    for b = 1:B
+        for t = 1:T
+            if t > 1
+                cumulative_win_stays(b, t) = cumulative_win_stays(b, t-1) + win_stay_count(b, t);
+                cumulative_lose_shifts(b, t) = cumulative_lose_shifts(b, t-1) + lose_shift_count(b, t);
+                cumulative_wins(b, t) = cumulative_wins(b, t-1) + (outcomes(b, t) == 1);
+                cumulative_losses(b, t) = cumulative_losses(b, t-1) + (outcomes(b, t) == -1);
+            else
+                cumulative_win_stays(b, t) = win_stay_count(b, t);
+                cumulative_lose_shifts(b, t) = lose_shift_count(b, t);
+                cumulative_wins(b, t) = (outcomes(b, t) == 1);
+                cumulative_losses(b, t) = (outcomes(b, t) == -1);
+            end
+        end
+    end
+    
+    wsFrac = cumulative_win_stays ./ cumulative_wins;
+    lsFrac = cumulative_lose_shifts ./ cumulative_losses;
+    
+    wsFreqHC = zeros(4, 1);
+    wsFreqLC = zeros(4, 1);
+    lsFreqHC = zeros(4, 1);
+    lsFreqLC = zeros(4, 1);
+    total_winsHC = zeros(4, 1);
+    total_lossesHC = zeros(4, 1);
+    total_winsLC = zeros(4, 1);
+    total_lossesLC = zeros(4, 1);
+
+    for b = 1:B
+        if controllabilities(b, 1) == 1
+            wsFreqHC(b) = wsFreq(b);
+            lsFreqHC(b) = lsFreq(b);
+            total_winsHC = total_wins(b);
+            total_lossesHC = total_losses(b);
+        else
+            wsFreqLC(b) = wsFreq(b);
+            lsFreqLC(b) = lsFreq(b);
+            total_winsLC = total_wins(b);
+            total_lossesLC = total_losses(b);
+        end    
+    end
+    
+    % Initialize vectors
+    maxWins = 40; % Maximum possible wins
+    %shiftAfterLossCounts = zeros(B, maxWins);
+    shiftAfterLossCounts = zeros(4, maxWins);
+    totalConsecutiveWinsCounts = zeros(4, maxWins);
+    weightedProbShiftAfterLoss = zeros(4, maxWins);
+    S = 4; % Number of stimuli
+
+    for iS = 1:S
+        for b = 1:B
+            consecutiveWins = 0;
+            for t = 1:T - 1
+                if stimuli(b, t) ~= iS
+                    continue
+                end
+                s = stimuli(b, t);
+                o = outcomes(b, t);
+                isWinState = mod(s, 2);
+                if (isWinState && o == 1) || (~isWinState && o == 0)
+                    consecutiveWins = consecutiveWins + 1;
+                else
+                    if consecutiveWins > 0
+                        % Count the total number of consecutive wins
+                        totalConsecutiveWinsCounts(iS, consecutiveWins) = totalConsecutiveWinsCounts(iS, consecutiveWins) + 1;                        
+                        nextStateTrial = find(stimuli(b, t+1:end) == iS, 1, 'first') +t;
+                        if ~isempty(nextStateTrial) && actions(b, t) ~= actions(b, nextStateTrial)
+                            shiftAfterLossCounts(iS, consecutiveWins) = shiftAfterLossCounts(iS, consecutiveWins) + 1;
+                        end
+                    end
+                    consecutiveWins = 0;
+                end
+            end
+        end
+    end
+   
+    % Calculate probabilities
+    probShiftAfterLoss = shiftAfterLossCounts ./ totalConsecutiveWinsCounts;
+    
+    % Handle division by zero (NaN values)
+    probShiftAfterLoss(isnan(probShiftAfterLoss)) = 0;
+
+    % Weight the probabilities by their occurrences
+    weightedProbShiftAfterLoss = probShiftAfterLoss .* totalConsecutiveWinsCounts ./ sum(totalConsecutiveWinsCounts);
+    
+    % Controllability array (for plotting)
+    plotControl = zeros(B, T);
+    for b = 1:B
+        if controllabilities(b, 1) == 1
+            plotControl(b, :) = 0.8;
+        else
+            plotControl(b, :) = 0.2;
+        end
+    end
+
+    % Reward array (for plotting)
+    plotReward = zeros(B, T);
+    for b = 1:B
+        if controllabilities(b, 1) == 1 || controllabilities(b, 1) == 0
+            plotReward(b, :) = 0.8;
+        else
+            plotReward(b, :) = (averageLossRate + averageRewardRate) /2;
+        end
+    end
+
+    % ----------------------------------------------------------------------- %
+    %% Save as output object:
     out.HCcell = HCcell;
     out.LCcell = LCcell;
     out.randHC = randHCs;
@@ -156,5 +313,18 @@ function [out] = ChemControl_mod4_modSim(parameters, subj)
     out.randomRewards = randomRewards;
     out.actions = actions;
     out.outcomes = outcomes;
+    out.wsFreq = wsFreq;
+    out.lsFreq = lsFreq;
+    out.owsFreq = owsFreq;
+    out.olsFreq = olsFreq;
+    out.wsFrac = wsFrac;
+    out.lsFrac = lsFrac;
+    out.plotControl = plotControl;
+    out.plotReward = plotReward;
+    out.arr = averageRewardRate;
+    out.alr = averageLossRate;
+    out.probShiftAfterLoss = probShiftAfterLoss;
+    out.weightedProbShiftAfterLoss = weightedProbShiftAfterLoss;
+
 end
       

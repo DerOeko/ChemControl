@@ -55,7 +55,7 @@ randomReward = zeros(B, T);
 controllability = zeros(B, T);
 
 sVec = repelem(cond, rep);
-sVec = sVec(randperm(length(stimuli)));
+sVec = sVec(randperm(size(stimuli, 2)));
 cali_stimuli(:) = sVec;
 rVec = [ones(1, numRewarded) zeros(1, T-numRewarded, 1)];
 rVec = rVec(randperm(T));
@@ -75,12 +75,14 @@ cArr(selected_indices) = 0;
 
 for b = 1:B
     sVec = repelem(cond, rep);
-    sVec = sVec(randperm(length(stimuli)));
+    sVec = sVec(randperm(size(stimuli, 2)));
     stimuli(b, :) = sVec;
     rVec = [ones(1, numRewarded) zeros(1, T-numRewarded, 1)];
     rVec = rVec(randperm(T));
     randomReward(b, :) = rVec;
-    switch cArr(b)
+
+    index = mod(b-1, length(cArr)) + 1;
+    switch cArr(index)
         case 1
             controllability(b, :) = 1;
             cVec = [ones(1, numControl), zeros(1, T-numControl, 1)];

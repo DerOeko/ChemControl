@@ -1,4 +1,4 @@
-function [out] = ChemControl_mod7_modSim(parameters, subj)
+function [out] = ChemControl_mod8_modSim(parameters, subj)
 % Standard Q-learning model with delta learning rule.
     
     % ----------------------------------------------------------------------- %

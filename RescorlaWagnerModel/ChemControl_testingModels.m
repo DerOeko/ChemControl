@@ -68,6 +68,9 @@ for iMod = 1:nMod
     groupParams{iMod} = cbm.output.group_mean{:};
 end
 
+%% 01c) Alternative C: Set parameters manually:
+...
+
 %% 02) SIMULATE
 %% 02a) Run settings
 controllabilitySchedules = [
@@ -85,7 +88,7 @@ controllabilitySchedules = [
 ];
 nRuns = 50;
 nTrials = 40;
-nBlocks = 8;
+nBlocks = 32;
 nStates = 4;
 nSchedules = 11;
 HCmeans = zeros(nTrials/4, 4, nRuns);
@@ -94,7 +97,8 @@ omegas7 = cell(nSchedules, 1);
 cPs = zeros(nSchedules, nTrials*nBlocks);
 for iSchedule = 1:nSchedules
     for iB = 1:nBlocks
-        if controllabilitySchedules(iSchedule, iB) == 1
+        index = mod(iB -1, 8)+1;
+        if controllabilitySchedules(iSchedule, index) == 1
             cPs(iSchedule, ((iB-1)*nTrials)+1:iB*nTrials+1)= 0.8;
         else
             cPs(iSchedule, ((iB-1)*nTrials)+1:iB*nTrials+1)=0.2;
@@ -102,10 +106,19 @@ for iSchedule = 1:nSchedules
     end
 end
 fig1 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig1)
+sgtitle("Learning curves for different models in high control trials")
 
-%% 02b) Run simulation and plot
+fig2 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+fig3 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig3)
+sgtitle("Weighted Probability of Shifting after a Loss vs. Number of Consecutive Wins")
+
+
+
+% 02b) Run simulation and plot
 for iMod = 1:nMod
-    subplot(2, ceil(nMod/2), iMod);
+    shiftMeans = zeros(nRuns, nStates, nTrials);
     parameters = groupParams{iMod};
     for iRun = 1:nRuns
         subj = sim_subj(nBlocks, nTrials);
@@ -142,14 +155,24 @@ for iMod = 1:nMod
             end
         end
         HCmeans(:, :, iRun) = HCoccurrences; 
+        shiftMeans(iRun, :, :) = out.weightedProbShiftAfterLoss;
+
     end
     HCmeans = mean(HCmeans, 3);
-    plotLearningCurves(HCmeans, sprintf("M%02d", iMod), true, fig1);
+    figure(fig1);
+    subplot(2, ceil(nMod/2), iMod);
+    plotLearningCurves(HCmeans, sprintf("M%02d", iMod), fig1);
+
+    shiftMeans = squeeze(mean(shiftMeans, 1));
+    figure(fig3);
+    subplot(2, ceil(nMod/2), iMod);
+    plotShiftLoss(shiftMeans, iMod, fig3);
 end
 
-%% Plot average Omega
+% Plot average Omega
 averageOmegas6 = cell(nSchedules, 1);
 averageOmegas7 = cell(nSchedules, 1);
+
 
 for schedule_idx = 1:nSchedules
     if ~isempty(omegas6{schedule_idx})
@@ -162,15 +185,9 @@ for schedule_idx = 1:nSchedules
     end
 end
 
-plotOmegas(averageOmegas6, averageOmegas7, cPs);
-%% Check yoked
-arrs = zeros(1, nRuns);
-alrs = zeros(1, nRuns);
+figure(fig2);
+plotOmegas(averageOmegas6, averageOmegas7, cPs, fig2);
 
-for iRun = 1:nRuns
-    subj = sim_subj();
-    parameters = groupParams{1};
-    out = ChemControl_mod1_modSim(parameters, subj);
-    arrs(iRun) = out.arr;
-    alrs(iRun) = out.alr;
-end
+
+
+

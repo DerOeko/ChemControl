@@ -1,12 +1,9 @@
-function figHandle = plotLearningCurves(occurrenceMeans, model_name, isHC, figHandle)
+function figHandle = plotLearningCurves(occurrenceMeans, model_name, figHandle)
     arguments
         occurrenceMeans;
         model_name;
-        isHC = true;
         figHandle = [];
     end
-    
-    controlString = fi(isHC, "High Control", "Low Control");
     sz = size(occurrenceMeans);
     T = sz(1) * sz(2);
     
@@ -28,7 +25,7 @@ function figHandle = plotLearningCurves(occurrenceMeans, model_name, isHC, figHa
     ylim([0.0, 1.0])
     yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
     legend('G2W', 'G2A', 'NG2W', 'NG2A', 'Location', 'best');
-    title(sprintf('%s: \n P(Go|State) \n Across State Repetitions \nin %s Trials', model_name, controlString));
+    title(sprintf('%s', model_name));
     grid on
     hold off;
 end

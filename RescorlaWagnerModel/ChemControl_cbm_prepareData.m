@@ -36,7 +36,7 @@ if ~exist(dirs.target, 'dir'); mkdir(dirs.target); end
 fprintf("Initialize settings\n")
 
 % Fixed input settings:
-nBlocks = 8; % how many blocks in one experiment
+nBlocks = 9; % how many blocks in one experiment
 nTrials = 40; % how many trials in a block
 
 % Downstream settings:
@@ -77,23 +77,46 @@ for iSub = 1:nSub
     % Define file path
     filePath = fullfile(folderPath, subFind{iSub});
     
-    % Define import options
-    opts = detectImportOptions(filePath);
-    opts.DataLines = [85, Inf]; % Start reading from line 85
-    opts.Delimiter = ","; % CSV delimiter
-    opts.MissingRule = "omitrow"; % Omit rows with missing data
-    opts.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_resp_keys"];
+    % Define options for reading calibration data (rows 44 to 83)
+    optsCal = detectImportOptions(filePath);
+    optsCal.DataLines = [44, 83]; % Lines 44 to 83
+    optsCal.Delimiter = ","; % CSV delimiter
+    optsCal.MissingRule = "fill"; % Fill missing data
+    optsCal.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_respCalibrate_keys"];
     
-    % Try to load the data
+    % Define options for reading main data (rows 85 to Inf)
+    optsMain = detectImportOptions(filePath);
+    optsMain.DataLines = [85, Inf]; % Start reading from line 85
+    optsMain.Delimiter = ","; % CSV delimiter
+    optsMain.MissingRule = "omitrow"; % Omit rows with missing data
+    optsMain.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_resp_keys"];
+    
+    % Try to load the calibration data
     try
-        data = readtable(filePath, opts);
+        calibrationData = readtable(filePath, optsCal);
     catch ME
-        fprintf('Error loading data for subject %03d: %s\n', iSub, ME.message);
-        continue;
+        fprintf('Error loading calibration data for subject %03d: %s\n', iSub, ME.message);
+        calibrationData = table(); % Create an empty table if an error occurs
     end
     
-    % Rename variables for consistency
-    data = renamevars(data, ["trialType", "key_resp_keys", "feedback"], ["stimuli", "actions", "outcomes"]);
+    % Fill missing data in calibrationData
+    calibrationData.randLC(:) = 2;
+
+    % Rename variable names
+    calibrationData = renamevars(calibrationData, ["trialType", "key_respCalibrate_keys", "feedback"], ["stimuli", "actions", "outcomes"]);
+
+    % Try to load the main data
+    try
+        mainData = readtable(filePath, optsMain);
+    catch ME
+        fprintf('Error loading main data for subject %03d: %s\n', iSub, ME.message);
+        mainData = table(); % Create an empty table if an error occurs
+    end
+
+    mainData = renamevars(mainData, ["trialType", "key_resp_keys", "feedback"], ["stimuli", "actions", "outcomes"]);
+
+    % Combine calibration data and main data
+    data = [calibrationData; mainData];
     
     % Convert data types and values
     data.stimuli(data.stimuli > 4, :) = data.stimuli(data.stimuli > 4) - 4; 
@@ -102,15 +125,19 @@ for iSub = 1:nSub
     data.randHC = int8(data.randHC);
     data.randLC = int8(data.randLC);
     data.randomReward = data.randomReward == 1;
+    
     % Convert actions from cell array of strings to a string array if necessary
     data.actions = string(data.actions);
     
     % Replace 'space' with '1' and 'None' with '2'
     data.actions(data.actions == "space") = "1";
     data.actions(data.actions == "None") = "2";
+    
     % Convert the string array to integers
     data.actions = str2double(data.actions);  % This converts the string numbers to actual numeric (double) values
-    data.outcomes = double((data.outcomes == 10) - (data.outcomes == -10)); % Convert outcomes to -1, 0, 1
+    
+    % Convert outcomes to -1, 0, 1
+    data.outcomes = double((data.outcomes == 10) - (data.outcomes == -10));
     
     % Store the data for this subject in the cell array
     rawData{iSub} = data;

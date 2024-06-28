@@ -223,6 +223,50 @@ function [out] = ChemControl_mod1_modSim(parameters, subj)
         end    
     end
     
+    % Initialize vectors
+    maxWins = 40; % Maximum possible wins
+    %shiftAfterLossCounts = zeros(B, maxWins);
+    shiftAfterLossCounts = zeros(4, maxWins);
+    totalConsecutiveWinsCounts = zeros(4, maxWins);
+    weightedProbShiftAfterLoss = zeros(4, maxWins);
+    S = 4; % Number of stimuli
+
+    for iS = 1:S
+        for b = 1:B
+            consecutiveWins = 0;
+            for t = 1:T - 1
+                if stimuli(b, t) ~= iS
+                    continue
+                end
+                s = stimuli(b, t);
+                o = outcomes(b, t);
+                isWinState = mod(s, 2);
+                if (isWinState && o == 1) || (~isWinState && o == 0)
+                    consecutiveWins = consecutiveWins + 1;
+                else
+                    if consecutiveWins > 0
+                        % Count the total number of consecutive wins
+                        totalConsecutiveWinsCounts(iS, consecutiveWins) = totalConsecutiveWinsCounts(iS, consecutiveWins) + 1;                        
+                        nextStateTrial = find(stimuli(b, t+1:end) == iS, 1, 'first') +t;
+                        if ~isempty(nextStateTrial) && actions(b, t) ~= actions(b, nextStateTrial)
+                            shiftAfterLossCounts(iS, consecutiveWins) = shiftAfterLossCounts(iS, consecutiveWins) + 1;
+                        end
+                    end
+                    consecutiveWins = 0;
+                end
+            end
+        end
+    end
+   
+    % Calculate probabilities
+    probShiftAfterLoss = shiftAfterLossCounts ./ totalConsecutiveWinsCounts;
+    
+    % Handle division by zero (NaN values)
+    probShiftAfterLoss(isnan(probShiftAfterLoss)) = 0;
+
+    % Weight the probabilities by their occurrences
+    weightedProbShiftAfterLoss = probShiftAfterLoss .* totalConsecutiveWinsCounts ./ sum(totalConsecutiveWinsCounts);
+    
     % Controllability array (for plotting)
     plotControl = zeros(B, T);
     for b = 1:B
@@ -264,5 +308,7 @@ function [out] = ChemControl_mod1_modSim(parameters, subj)
     out.plotReward = plotReward;
     out.arr = averageRewardRate;
     out.alr = averageLossRate;
+    out.probShiftAfterLoss = probShiftAfterLoss;
+    out.weightedProbShiftAfterLoss = weightedProbShiftAfterLoss;
 
 end

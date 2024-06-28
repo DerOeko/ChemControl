@@ -54,6 +54,4 @@ for iSchedule = 1:nSchedules
     waitforbuttonpress;
 end
 
-% Close the figure at the end if you want to
-close(figHandle)
 end
