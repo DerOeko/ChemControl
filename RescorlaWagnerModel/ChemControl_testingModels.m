@@ -91,7 +91,11 @@ nTrials = 40;
 nBlocks = 32;
 nStates = 4;
 nSchedules = 11;
+
 HCmeans = zeros(nTrials/4, 4, nRuns);
+LCmeans = zeros(nTrials/4, 4, nRuns);
+YCmeans = zeros(nTrials/4, 4, nRuns);
+
 omegas6 = cell(nSchedules, 1);
 omegas7 = cell(nSchedules, 1);
 cPs = zeros(nSchedules, nTrials*nBlocks);
@@ -107,18 +111,36 @@ for iSchedule = 1:nSchedules
 end
 fig1 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig1)
-sgtitle("Learning curves for different models in high control trials")
+sgtitle(sprintf("Learning curves for different models in high control trials for %i runs", nRuns))
 
 fig2 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig2)
+sgtitle(sprintf("Learning curves for different models in low control trials for %i runs", nRuns))
+
 fig3 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig3)
-sgtitle("Weighted Probability of Shifting after a Loss vs. Number of Consecutive Wins")
+sgtitle(sprintf("Learning curves for different models in yoked low control trials for %i runs", nRuns))
 
+fig4 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig4)
+sgtitle("Weighted Probability of Shifting after a Loss vs. Number of Consecutive Wins in High Control")
 
+fig5 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig5);
+sgtitle("Weighted Probability of Shifting after a Loss vs. Number of Consecutive Wins in Low Non-Yoked Control")
+
+fig6 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig6);
+sgtitle("Weighted Probability of Shifting after a Loss vs. Number of Consecutive Wins in Low Yoked Control")
+
+fig7 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig7);
 
 % 02b) Run simulation and plot
 for iMod = 1:nMod
-    shiftMeans = zeros(nRuns, nStates, nTrials);
+    shiftMeans_HC = zeros(nRuns, nStates, nTrials);
+    shiftMeans_LC = zeros(nRuns, nStates, nTrials);
+    shiftMeans_YC = zeros(nRuns, nStates, nTrials);
     parameters = groupParams{iMod};
     for iRun = 1:nRuns
         subj = sim_subj(nBlocks, nTrials);
@@ -128,7 +150,6 @@ for iMod = 1:nMod
             schedule_idx = subj.selected_schedule_idx;
             reshaped_omegas = reshape(out.omegas', [nTrials*nBlocks, 1]);
             
-
             if iMod == 6
                 if isempty(omegas6{schedule_idx})
                     omegas6{schedule_idx} = reshaped_omegas;
@@ -144,29 +165,71 @@ for iMod = 1:nMod
             end
         end
         HCcell = out.HCcell;
+        LCcell = out.LCcell;
+        YCcell = out.YCcell;
+
         HCoccurrences = zeros(nTrials/4, 4);
+        LCoccurrences = zeros(nTrials/4, 4);
+        YCoccurrences = zeros(nTrials/4, 4);
+
         for s = 1:4
             for occurrence = 1:nTrials/4
                 HCprobs = zeros(nBlocks/2, 1);
+                LCprobs = zeros(nBlocks/4, 1);
+                YCprobs = zeros(nBlocks/4, 1);
                 for b = 1:nBlocks/2
                     HCprobs(b) = HCcell{b, s}(occurrence);
+                    if b <= nBlocks/4
+                        LCprobs(b) = LCcell{b, s}(occurrence);
+                        YCprobs(b) = YCcell{b, s}(occurrence);
+                    end
                 end
                 HCoccurrences(occurrence, s) = mean(HCprobs);
+                LCoccurrences(occurrence, s) = mean(LCprobs);
+                YCoccurrences(occurrence, s) = mean(YCprobs);
             end
         end
         HCmeans(:, :, iRun) = HCoccurrences; 
-        shiftMeans(iRun, :, :) = out.weightedProbShiftAfterLoss;
+        LCmeans(:, :, iRun) = LCoccurrences;
+        YCmeans(:, :, iRun) = YCoccurrences;
+
+        % Store shift means for each control type
+        shiftMeans_HC(iRun, :, :) = out.weightedProbShiftAfterLoss_HC;
+        shiftMeans_LC(iRun, :, :) = out.weightedProbShiftAfterLoss_LC;
+        shiftMeans_YC(iRun, :, :) = out.weightedProbShiftAfterLoss_YC;
 
     end
     HCmeans = mean(HCmeans, 3);
+    LCmeans = mean(LCmeans, 3);
+    YCmeans = mean(YCmeans, 3);
+
     figure(fig1);
     subplot(2, ceil(nMod/2), iMod);
     plotLearningCurves(HCmeans, sprintf("M%02d", iMod), fig1);
-
-    shiftMeans = squeeze(mean(shiftMeans, 1));
-    figure(fig3);
+    
+    figure(fig2);
     subplot(2, ceil(nMod/2), iMod);
-    plotShiftLoss(shiftMeans, iMod, fig3);
+    plotLearningCurves(LCmeans, sprintf("M%02d", iMod), fig2);
+    
+    figure(fig3)
+    subplot(2, ceil(nMod/2), iMod);
+    plotLearningCurves(YCmeans, sprintf("M%02d", iMod), fig3);
+
+    shiftMeans_HC = squeeze(mean(shiftMeans_HC, 1));
+    shiftMeans_LC = squeeze(mean(shiftMeans_LC, 1));
+    shiftMeans_YC = squeeze(mean(shiftMeans_YC, 1));
+
+    figure(fig4);
+    subplot(2, ceil(nMod/2), iMod);
+    plotShiftLoss(shiftMeans_HC, iMod, fig4);
+
+    figure(fig5);
+    subplot(2, ceil(nMod/2), iMod);
+    plotShiftLoss(shiftMeans_LC, iMod, fig5);
+
+    figure(fig6);
+    subplot(2, ceil(nMod/2), iMod);
+    plotShiftLoss(shiftMeans_YC, iMod, fig6);
 end
 
 % Plot average Omega
@@ -185,8 +248,8 @@ for schedule_idx = 1:nSchedules
     end
 end
 
-figure(fig2);
-plotOmegas(averageOmegas6, averageOmegas7, cPs, fig2);
+figure(fig7);
+plotOmegas(averageOmegas6, averageOmegas7, cPs, fig7);
 
 
 
