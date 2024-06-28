@@ -73,53 +73,24 @@ end
 
 %% 02) SIMULATE
 %% 02a) Run settings
-controllabilitySchedules = [
-    1, 2, 2, 1, 2, 1, 1, 2;
-    2, 1, 2, 2, 1, 2, 1, 1;
-    1, 2, 1, 2, 2, 1, 2, 1;
-    1, 1, 2, 1, 2, 2, 1, 2;
-    2, 1, 1, 2, 1, 2, 2, 1;
-    1, 2, 1, 1, 2, 1, 2, 2;
-    2, 1, 2, 1, 1, 2, 1, 2;
-    2, 2, 1, 2, 1, 1, 2, 1;
-    1, 1, 2, 2, 1, 2, 1, 2;
-    2, 2, 1, 1, 2, 1, 2, 1;
-    1, 2, 1, 2, 1, 2, 1, 2;
-];
-nRuns = 50;
-nTrials = 40;
+
+nRuns = 100;
+nTrials = 80;
 nBlocks = 32;
 nStates = 4;
 nSchedules = 11;
 
-HCmeans = zeros(nTrials/4, 4, nRuns);
-LCmeans = zeros(nTrials/4, 4, nRuns);
-YCmeans = zeros(nTrials/4, 4, nRuns);
-
-omegas6 = cell(nSchedules, 1);
-omegas7 = cell(nSchedules, 1);
-cPs = zeros(nSchedules, nTrials*nBlocks);
-for iSchedule = 1:nSchedules
-    for iB = 1:nBlocks
-        index = mod(iB -1, 8)+1;
-        if controllabilitySchedules(iSchedule, index) == 1
-            cPs(iSchedule, ((iB-1)*nTrials)+1:iB*nTrials+1)= 0.8;
-        else
-            cPs(iSchedule, ((iB-1)*nTrials)+1:iB*nTrials+1)=0.2;
-        end
-    end
-end
 fig1 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig1)
-sgtitle(sprintf("Learning curves for different models in high control trials for %i runs", nRuns))
+sgtitle(sprintf("Learning curves for different models in high control trials for %i runs, %i blocks, %i trials", nRuns, nBlocks, nTrials))
 
 fig2 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig2)
-sgtitle(sprintf("Learning curves for different models in low control trials for %i runs", nRuns))
+sgtitle(sprintf("Learning curves for different models in low control trials for %i runs, %i blocks, %i trials", nRuns, nBlocks, nTrials))
 
 fig3 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig3)
-sgtitle(sprintf("Learning curves for different models in yoked low control trials for %i runs", nRuns))
+sgtitle(sprintf("Learning curves for different models in yoked low control trials for %i runs, %i blocks, %i trials", nRuns, nBlocks, nTrials))
 
 fig4 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig4)
@@ -134,7 +105,71 @@ figure(fig6);
 sgtitle("Weighted Probability of Shifting after a Loss vs. Number of Consecutive Wins in Low Yoked Control")
 
 fig7 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-figure(fig7);
+figure(fig7)
+sgtitle(sprintf("Prediction errors for different models in high control trials for %i runs", nRuns))
+
+fig8 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig8)
+sgtitle(sprintf("Prediction errors for different models in low control trials for %i runs", nRuns))
+
+fig9 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig9)
+sgtitle(sprintf("Prediction errors for different models in yoked low control trials for %i runs", nRuns))
+
+fig10 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig10);
+
+fig11 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig11)
+sgtitle(sprintf("Average reward rate in high control trials for %i runs", nRuns))
+
+fig12 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig12)
+sgtitle(sprintf("Average reward rate in low control trials for %i runs", nRuns))
+
+fig13 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig13)
+sgtitle(sprintf("Average reward rate in yoked low control trials for %i runs", nRuns))
+
+controllabilitySchedules = [
+    1, 2, 2, 1, 2, 1, 1, 2;
+    2, 1, 2, 2, 1, 2, 1, 1;
+    1, 2, 1, 2, 2, 1, 2, 1;
+    1, 1, 2, 1, 2, 2, 1, 2;
+    2, 1, 1, 2, 1, 2, 2, 1;
+    1, 2, 1, 1, 2, 1, 2, 2;
+    2, 1, 2, 1, 1, 2, 1, 2;
+    2, 2, 1, 2, 1, 1, 2, 1;
+    1, 1, 2, 2, 1, 2, 1, 2;
+    2, 2, 1, 1, 2, 1, 2, 1;
+    1, 2, 1, 2, 1, 2, 1, 2;
+];
+
+HCmeans = zeros(nTrials/4, 4, nRuns);
+LCmeans = zeros(nTrials/4, 4, nRuns);
+YCmeans = zeros(nTrials/4, 4, nRuns);
+
+HCpes_mean = zeros(nTrials/4, 4, nRuns);
+LCpes_mean = zeros(nTrials/4, 4, nRuns);
+YCpes_mean = zeros(nTrials/4, 4, nRuns);
+
+HCarr_mean = zeros(nTrials/4, 4, nRuns);
+LCarr_mean = zeros(nTrials/4, 4, nRuns);
+YCarr_mean = zeros(nTrials/4, 4, nRuns);
+
+omegas6 = cell(nSchedules, 1);
+omegas7 = cell(nSchedules, 1);
+cPs = zeros(nSchedules, nTrials*nBlocks);
+for iSchedule = 1:nSchedules
+    for iB = 1:nBlocks
+        index = mod(iB -1, 8)+1;
+        if controllabilitySchedules(iSchedule, index) == 1
+            cPs(iSchedule, ((iB-1)*nTrials)+1:iB*nTrials+1)= 0.8;
+        else
+            cPs(iSchedule, ((iB-1)*nTrials)+1:iB*nTrials+1)=0.2;
+        end
+    end
+end
 
 % 02b) Run simulation and plot
 for iMod = 1:nMod
@@ -167,31 +202,81 @@ for iMod = 1:nMod
         HCcell = out.HCcell;
         LCcell = out.LCcell;
         YCcell = out.YCcell;
+        
+        HCpes = out.HCpe;
+        LCpes = out.LCpe;
+        YCpes = out.YCpe;
+
+        HCarr = out.HCarr;
+        LCarr = out.LCarr;
+        YCarr = out.YCarr;
 
         HCoccurrences = zeros(nTrials/4, 4);
         LCoccurrences = zeros(nTrials/4, 4);
         YCoccurrences = zeros(nTrials/4, 4);
+
+        HCpe_occurrence = zeros(nTrials/4, 4);
+        LCpe_occurrence = zeros(nTrials/4, 4);
+        YCpe_occurrence = zeros(nTrials/4, 4);
+
+        HCarr_occurrence = zeros(nTrials/4, 4);
+        LCarr_occurrence = zeros(nTrials/4, 4);
+        YCarr_occurrence = zeros(nTrials/4, 4);
 
         for s = 1:4
             for occurrence = 1:nTrials/4
                 HCprobs = zeros(nBlocks/2, 1);
                 LCprobs = zeros(nBlocks/4, 1);
                 YCprobs = zeros(nBlocks/4, 1);
+
+                HCpes_block = zeros(nBlocks/2, 1);
+                LCpes_block = zeros(nBlocks/4, 1);
+                YCpes_block = zeros(nBlocks/4, 1);
+
+                HCarr_block = zeros(nBlocks/2, 1);
+                LCarr_block = zeros(nBlocks/4, 1);
+                YCarr_block = zeros(nBlocks/4, 1);
+
                 for b = 1:nBlocks/2
                     HCprobs(b) = HCcell{b, s}(occurrence);
+                    HCpes_block(b) = HCpes{b, s}(occurrence);
+                    HCarr_block(b) = HCarr{b, s}(occurrence);
+                    
                     if b <= nBlocks/4
                         LCprobs(b) = LCcell{b, s}(occurrence);
                         YCprobs(b) = YCcell{b, s}(occurrence);
+
+                        LCpes_block(b) = LCpes{b, s}(occurrence);
+                        YCpes_block(b) = YCpes{b, s}(occurrence);
+
+                        LCarr_block(b) = LCarr{b, s}(occurrence);
+                        YCarr_block(b) = YCarr{b, s}(occurrence);
                     end
                 end
                 HCoccurrences(occurrence, s) = mean(HCprobs);
                 LCoccurrences(occurrence, s) = mean(LCprobs);
                 YCoccurrences(occurrence, s) = mean(YCprobs);
-            end
+
+                HCpe_occurrence(occurrence, s) = mean(HCpes_block);
+                LCpe_occurrence(occurrence, s) = mean(LCpes_block);
+                YCpe_occurrence(occurrence, s) = mean(YCpes_block);
+
+                HCarr_occurrence(occurrence, s) = mean(HCarr_block);
+                LCarr_occurrence(occurrence, s) = mean(LCarr_block);
+                YCarr_occurrence(occurrence, s) = mean(YCarr_block);
+           end
         end
         HCmeans(:, :, iRun) = HCoccurrences; 
         LCmeans(:, :, iRun) = LCoccurrences;
         YCmeans(:, :, iRun) = YCoccurrences;
+
+        HCpes_mean(:, :, iRun) = HCpe_occurrence;
+        LCpes_mean(:, :, iRun) = LCpe_occurrence;
+        YCpes_mean(:, :, iRun) = YCpe_occurrence;
+
+        HCarr_mean(:, :, iRun) = HCarr_occurrence; 
+        LCarr_mean(:, :, iRun) = LCarr_occurrence;
+        YCarr_mean(:, :, iRun) = YCarr_occurrence;
 
         % Store shift means for each control type
         shiftMeans_HC(iRun, :, :) = out.weightedProbShiftAfterLoss_HC;
@@ -202,6 +287,14 @@ for iMod = 1:nMod
     HCmeans = mean(HCmeans, 3);
     LCmeans = mean(LCmeans, 3);
     YCmeans = mean(YCmeans, 3);
+
+    HCpes_mean = mean(HCpes_mean, 3);
+    LCpes_mean = mean(LCpes_mean, 3);
+    YCpes_mean = mean(YCpes_mean, 3);
+
+    HCarr_mean = mean(HCarr_mean, 3);
+    LCarr_mean = mean(LCarr_mean, 3);
+    YCarr_mean = mean(YCarr_mean, 3);
 
     figure(fig1);
     subplot(2, ceil(nMod/2), iMod);
@@ -230,6 +323,30 @@ for iMod = 1:nMod
     figure(fig6);
     subplot(2, ceil(nMod/2), iMod);
     plotShiftLoss(shiftMeans_YC, iMod, fig6);
+
+    figure(fig7);
+    subplot(2, ceil(nMod/2), iMod);
+    plotPredictionErrors(HCpes_mean, iMod, fig7);
+
+    figure(fig8);
+    subplot(2, ceil(nMod/2), iMod);
+    plotPredictionErrors(LCpes_mean, iMod, fig8);
+
+    figure(fig9);
+    subplot(2, ceil(nMod/2), iMod);
+    plotPredictionErrors(YCpes_mean, iMod, fig9);
+
+    figure(fig11);
+    subplot(2, ceil(nMod/2), iMod);
+    plotAverageRewardRate(HCarr_mean, sprintf("M%02d", iMod), fig11);
+    
+    figure(fig12);
+    subplot(2, ceil(nMod/2), iMod);
+    plotAverageRewardRate(LCarr_mean, sprintf("M%02d", iMod), fig12);
+    
+    figure(fig13)
+    subplot(2, ceil(nMod/2), iMod);
+    plotAverageRewardRate(YCarr_mean, sprintf("M%02d", iMod), fig13);
 end
 
 % Plot average Omega
@@ -248,8 +365,8 @@ for schedule_idx = 1:nSchedules
     end
 end
 
-figure(fig7);
-plotOmegas(averageOmegas6, averageOmegas7, cPs, fig7);
+figure(fig10);
+plotOmegas(averageOmegas6, averageOmegas7, cPs, fig10);
 
 
 

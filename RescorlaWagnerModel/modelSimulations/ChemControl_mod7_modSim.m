@@ -34,6 +34,15 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
     HCcell = cell(B/2, S); % Store go probs in HC
     LCcell = cell(B/4, S); % Store go probs in LC
     YCcell = cell(B/4, S);
+
+    HCpe = cell(B/2, S); % Store pe for each trial
+    LCpe = cell(B/4, S);
+    YCpe = cell(B/4, S);
+
+    HCarr = cell(B/2, S); % Average reward rate in high control blocks over time
+    LCarr = cell(B/4, S);
+    YCarr = cell(B/4, S);
+    
     actions = zeros(B, T);
     outcomes = zeros(B, T);
     omegas = zeros(B, T);
@@ -126,7 +135,7 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
 
         Omega = 0;
         omega = 1/(1+exp(-beta*(Omega-thres)));
-
+        arr = 0;
         for t = 1:T
             omegas(b, t) = omega;
             s = stimuli(b, t);
@@ -147,14 +156,6 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
 
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
-            if isHC
-                HCcell{hc, s}(end+1) = p1;
-            elseif isLC
-                LCcell{lc, s}(end+1) = p1;
-            elseif isYoked
-                YCcell{yc, s}(end+1) = p1;
-            end
-
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
             actions(b, t) = a;
@@ -163,10 +164,12 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
             v_pe = rho * o - sv(s);
             sv(s) = sv(s) + ep * (rho * o - sv(s));
             if a==1
+                pe = rho * o - q_g(s);
                 q_pe = rho*o-q_g(s);
 
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
             elseif a==2
+                pe = rho * o - q_ng(s);
                 q_pe = rho*o-q_ng(s);
 
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
@@ -174,6 +177,21 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
 
             Omega = Omega + alpha*(q_pe - v_pe - Omega);
             omega = 1/(1+exp(-beta*(Omega-thres)));
+            arr = arr + (o - arr);
+            
+            if isHC
+                HCcell{hc, s}(end+1) = p1;
+                HCpe{hc, s}(end+1) = pe;
+                HCarr{hc, s}(end+1) = arr;
+            elseif isLC
+                LCcell{lc, s}(end+1) = p1;
+                LCpe{lc, s}(end+1) = pe;
+                LCarr{lc, s}(end+1) = arr;
+            elseif isYoked
+                YCcell{yc, s}(end+1) = p1;
+                YCpe{yc, s}(end+1) = pe;
+                YCarr{yc, s}(end+1) = arr;
+            end   
         end
     end
     
@@ -304,7 +322,7 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
         end
     end
 % Initialize vectors
-    maxWins = 40; % Maximum possible wins
+    maxWins = T; % Maximum possible wins
     S = 4; % Number of stimuli
     
     % For high control
@@ -422,6 +440,12 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
     out.HCcell = HCcell;
     out.LCcell = LCcell;
     out.YCcell = YCcell;
+    out.HCpe = HCpe;
+    out.LCpe = LCpe;
+    out.YCpe = YCpe;
+    out.HCarr = HCarr;
+    out.LCarr = LCarr;
+    out.YCarr = YCarr;
     out.randHC = randHCs;
     out.randLC = randLCs;
     out.stimuli = stimuli;
