@@ -6,12 +6,12 @@ function [loglik] = ChemControl_mod10(parameters,subj)
 ep = sigmoid(parameters(1));
 rho = exp(parameters(2));
 goBias = parameters(3);
-alpha = sigmoid(parameters(4));
-beta = exp(parameters(5));
-thres = scaledSigmoid(parameters(6));
+alpha = ep; % sigmoid(parameters(4));
+beta = exp(parameters(4));
+thres = scaledSigmoid(parameters(5));
 
 % additional parameters
-w_rew_info=parameters(7); % may go both ways
+w_rew_info=parameters(6); % may go both ways
 % omega_bounds=0.5*sigmoid(parameters(8)); % cannot be bigger than 0.5
 % softmax_bounds=0.5*sigmoid(parameters(8)); % cannot be bigger than 0.5
 
