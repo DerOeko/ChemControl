@@ -9,6 +9,8 @@ In total, we've build 4 RW models based on Guitart—Masip et al. 2012, and impl
 * Clone this GitHub repository.
 * Create a "github_config.m" file that creates a folderPath string that points to your data. E.g. like this:
 
+Remark: it would be good to use the github_config file to adjust all paths (including the cbm path) used in the functions
+
 "% Local path on your machine
 folderPath = "/project/path/to/your/data/";"
 
@@ -16,4 +18,5 @@ folderPath = "/project/path/to/your/data/";"
 
 ## Contact
 For questions, please contact me, at samuelgerrit.nellessen@gmail.com.
+
 

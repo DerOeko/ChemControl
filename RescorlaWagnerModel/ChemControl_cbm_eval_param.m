@@ -28,7 +28,7 @@ dirs.lap     = fullfile(dirs.results, 'LAP_Results');
 dirs.hbi     = fullfile(dirs.results, 'HBI_Results');
 dirs.models         = fullfile(dirs.root, 'models');
 
-% Add paths: 
+% Add paths:
 addpath('/home/control/samnel/Documents/MATLAB/cbm-master/codes'); % CBM toolbox
 addpath(fullfile(dirs.root, 'behavioral_study', 'scripts', 'matlab_scripts', 'RescorlaWagnerModel', 'models')); % models
 

@@ -11,3 +11,6 @@ backups/*
 *.log
 
 Log/*
+
+cbm-master
+cbm-master/*
