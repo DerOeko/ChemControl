@@ -124,7 +124,7 @@ if ~exist(outputFile, "file")
         if strcmp(job.simType, 'realSim')
             subj = data{iSub};
         elseif strcmp(job.simType, 'modSim')
-            subj = sim_subj;
+            subj = sim_subj(16, 80);
         else
             error("Unknown simulation type");
         end
