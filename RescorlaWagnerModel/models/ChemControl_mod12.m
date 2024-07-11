@@ -1,4 +1,4 @@
-function [loglik] = ChemControl_mod11(parameters,subj)
+function [loglik] = ChemControl_mod12(parameters,subj)
 
 % personal guess model (what I would  plemented to test our
 % hypothesis)
@@ -6,10 +6,8 @@ function [loglik] = ChemControl_mod11(parameters,subj)
 ep = sigmoid(parameters(1));
 rho = exp(parameters(2));
 goBias = parameters(3);
-alpha_up = ep;
-alpha_down = ep; 
-
-
+alpha_up = sigmoid(parameters(4)); % probably not needed to have 2 LR
+alpha_down = sigmoid(parameters(5)); % probably not needed to have 2 LR
 
 actions = subj.actions;
 outcomes = subj.outcomes;
@@ -18,7 +16,7 @@ states = subj.stimuli;
 B = size(outcomes, 1);
 T = size(outcomes, 2);
 initQ = [0.5 -0.5 0.5 -0.5] * rho;
-initV = [0.5 -0.5 0.5 -0.5];
+initV = [0.5 -0.5 0.5 -0.5]; % why not multiplying by rho here?
 initRR=0;
 
 loglik = 0;
