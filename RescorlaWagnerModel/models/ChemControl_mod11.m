@@ -86,7 +86,7 @@ for b = 1:B
 
         % different logics to update Omega: simply tracks the overall frequency of trials
         % where the prediction error of the Pavlovian model is higher than that of the instrumental model
-        if v_pe_abs>q_pe_abs:
+        if v_pe_abs>q_pe_abs
             omega = omega + alpha_up*(int(v_pe_abs>q_pe_abs) - omega);
         else
             omega = omega + alpha_down*(int(v_pe_abs>q_pe_abs) - omega);
