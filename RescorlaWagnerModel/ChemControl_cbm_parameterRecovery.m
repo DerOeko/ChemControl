@@ -52,7 +52,6 @@ selMod        = 3;
 simType     = 'modSim'; % modSim realSim
 parType     = 'hbi'; % lap hbi
 nIter       = 100; % number simulations to be recovered
-nSub        = length(dir(fullfile(dirs.behav, "*.csv"))); % number subjects
 
 fprintf('Perform model recovery for M%02d, simType %s, parType %s \n', ...
     selMod, simType, parType);
@@ -106,6 +105,7 @@ simFile     = fullfile(dirs.sim, sprintf('%s_mod%02d_%s_iter%04d.mat', ...
 
 tmp         = load(simFile);
 simulations = tmp.sim;
+nSub        = size(simulations.stimuli, 1); % number subjects
 
 % ----------------------------------------------------------------------- %
 %% 01c) Prepare fitting simulated data:
@@ -117,8 +117,8 @@ priors{2} = struct('mean', zeros(3, 1), 'variance', 6.25); % prior_model_goBias
 priors{3} = struct('mean', zeros(4, 1), 'variance', 6.25); % prior_model_fixedPavlov
 priors{4} = struct('mean', zeros(4, 1), 'variance', 6.25); % prior_model_dynamicPavlov
 priors{5} = struct('mean', zeros(4, 1), 'variance', 6.25); % prior_model_fixedOmega
-priors{6} = struct('mean', zeros(7, 1), 'variance', 6.25); % prior_model_dynamicOmega1
-priors{7} = struct('mean', zeros(7, 1), 'variance', 6.25); % prior_model_dynamicOmega2
+priors{6} = struct('mean', zeros(6, 1), 'variance', 6.25); % prior_model_dynamicOmega1
+priors{7} = struct('mean', zeros(6, 1), 'variance', 6.25); % prior_model_dynamicOmega2
 
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
@@ -239,11 +239,11 @@ transform{4} = {'sigmoid', 'exp', '@(x) x', '@(x) x'};
 param_names{5} = {'\epsilon', '\rho', 'goBias', '\omega'}; % FixedOmegaModel
 transform{5} = {'sigmoid', 'exp', '@(x) x', 'sigmoid'};
 
-param_names{6} = {'\epsilon', '\rho', 'goBias', '\omega_{init}', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
-transform{6} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'sigmoid', 'exp'};
+param_names{6} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
+transform{6} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp'};
 
-param_names{7} = {'\epsilon', '\rho', 'goBias', '\omega_{init}', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
-transform{7} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp', '@scaledSigmoid'};
+param_names{7} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{7} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', '@scaledSigmoid'};
 
 % Descriptives of parameters:
 fittedParamAvgSub = squeeze(mean(fittedParam, 1));

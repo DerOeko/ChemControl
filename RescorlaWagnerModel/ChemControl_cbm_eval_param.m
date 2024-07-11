@@ -49,11 +49,11 @@ transform{4} = {@sigmoid, @exp, @(x) x, @(x) x};
 param_names{5} = {'\epsilon', '\rho', 'goBias', '\omega'}; % FixedOmegaModel
 transform{5} = {@sigmoid, @exp, @(x) x, @sigmoid};
 
-param_names{6} = {'\epsilon', '\rho', 'goBias', '\omega_{init}', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
-transform{6} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid, @sigmoid, @exp};
+param_names{6} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
+transform{6} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid, @exp};
 
-param_names{7} = {'\epsilon', '\rho', 'goBias', '\omega_{init}', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
-transform{7} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid, @exp, @scaledSigmoid};
+param_names{7} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{7} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid};
 
 
 % ----------------------------------------------------------------------- %
@@ -216,13 +216,13 @@ transform{4} = {'sigmoid', 'exp', '@(x) x', '@(x) x'};
 param_names{5} = {'\epsilon', '\rho', 'goBias', '\omega'}; % FixedOmegaModel
 transform{5} = {'sigmoid', 'exp', '@(x) x', 'sigmoid'};
 
-param_names{6} = {'\epsilon', '\rho', 'goBias', '\omega_{init}', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
-transform{6} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'sigmoid', 'exp'};
+param_names{6} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
+transform{6} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp'};
 
-param_names{7} = {'\epsilon', '\rho', 'goBias', '\omega_{init}', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
-transform{7} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp', 'scaledSigmoid'};
+param_names{7} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{7} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
 
-model_names = {'Q', 'Q + goBias', 'Q + goBias + \pi', 'Q + V + goBias + \pi', 'Q + V + goBias + \omega', 'Q + V + goBias + \omega_{init} + \alpha + \kappa + \slope', 'Q + V + goBias + \omega_{init} + \alpha_{\Omega} + \beta_{\Omega} + thres_{\Omega}' };
+model_names = {'Q', 'Q + goBias', 'Q + goBias + \pi', 'Q + V + goBias + \pi', 'Q + V + goBias + \omega', 'Q + V + goBias + \alpha + \kappa + \slope', 'Q + V + goBias + \alpha_{\Omega} + \beta_{\Omega} + thres_{\Omega}' };
 
 % Create output name:
 modVec = 1:nMod;

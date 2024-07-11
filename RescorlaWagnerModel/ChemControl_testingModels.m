@@ -26,7 +26,7 @@ dirs.root           = '/project/3017083.01/behavioral_study/scripts/matlab_scrip
 dirs.results = fullfile(dirs.root, 'Log', 'Behavior', 'Modelling_CBM');
 dirs.lap     = fullfile(dirs.results, 'LAP_Results');
 dirs.hbi     = fullfile(dirs.results, 'HBI_Results');
-dirs.models         = fullfile(dirs.root, 'models');
+dirs.models         = fullfile(dirs.root, 'modelSimulations');
 dirs.target = fullfile(dirs.root, 'Log/Behavior/Modelling_CBM');
 
 % Input file
@@ -69,14 +69,14 @@ for iMod = 1:nMod
 end
 
 %% 01c) Alternative C: Set parameters manually:
-...
+groupParams{8} = [groupParams{1} -0.1];
 
 %% 02) SIMULATE
 %% 02a) Run settings
 
 nRuns = 100;
 nTrials = 80;
-nBlocks = 32;
+nBlocks = 16;
 nStates = 4;
 nSchedules = 11;
 

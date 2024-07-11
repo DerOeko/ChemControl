@@ -57,8 +57,8 @@ nParams = [2 3 4 4 4 6 6]; % Number of parameters per model
 selMod = 7; % Which model?
 nParam = nParams(selMod); % Number of params for this model
 
-numSamples = 100; % How many parameter samples for each parameter?
-numSampleParam = 100; % From each parameter samples, how many to take
+numSamples = 1000; % How many parameter samples for each parameter?
+numSampleParam = 1000; % From each parameter samples, how many to take
 nSub = 1; % How many simulations for each parameter combination?
 
 modelSimHandle = str2func(sprintf('ChemControl_mod%d_modSim', selMod));
@@ -180,7 +180,7 @@ disp(summary_stats_median);
 % Settings:
 fprintf('>>> Set parameter recovery correlation settings\n')
 numSamples = 1000; % How many parameter samples for each parameter?
-numSampleParam = 100; % From each parameter samples, how many to take
+numSampleParam = 1000; % From each parameter samples, how many to take
 
 % Define means and variances for each parameter
 eps_mean    = 0; eps_v      = 2; % Learning rate (sigmoid)
@@ -290,7 +290,7 @@ parfor iComb = 1:numCombinations
     for iSub = 1:nSub
         % Extract subject data:
         fprintf("Start subject %03d\n", iSub)
-        subj = sim_subj;
+        subj = sim_subj(16, 80);
         % Simulate:
         out = modelSimHandle(parameters, subj); 
         data{iSub} = struct("stimuli", out.stimuli, "actions", out.actions, "outcomes", out.outcomes);
@@ -417,7 +417,7 @@ for iMod = 1:nMod
         for iSub = 1:nSub
             % Extract subject data:
             fprintf("Start subject %03d\n", iSub)
-            subj = sim_subj;
+            subj = sim_subj(16, 80);
             % Simulate:
             out = modelSimHandle(parameters, subj); 
             data{iSub} = struct("stimuli", out.stimuli, "actions", out.actions, "outcomes", out.outcomes);
