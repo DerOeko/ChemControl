@@ -1,6 +1,6 @@
 function [loglik] = ChemControl_mod10(parameters,subj)
 
-% personal guess model (what I would have implemented to test our
+% personal guess model (what I would  plemented to test our
 % hypothesis)
 
 ep = sigmoid(parameters(1));
@@ -116,7 +116,7 @@ for b = 1:B
 
         % update Omega in a way that scales with the "probability" that the
         % participant has made an exploratory decision on that trial
-        Omega = Omega + (alpha*p_explore)*(abs(v_pe)-abs(q_pe) - Omega);
+        Omega = Omega + (alpha*p_explore)*(v_pe_abs-q_pe_abs - Omega);
         
         % to update continuously, use instead
         % Omega = Omega + alpha*(abs(v_pe)-abs(q_pe) - Omega);
