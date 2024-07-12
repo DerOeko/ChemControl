@@ -51,6 +51,7 @@ function [out] = ChemControl_mod1_modSim(parameters, subj)
     q_ng = q0 * rho;
     w_g = q0 * rho;
     w_ng = q0 * rho;
+
     isHC = 1;
     for t = 1:T
         s = cali_stimuli(t);

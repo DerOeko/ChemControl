@@ -64,6 +64,15 @@ transform{9} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid, @sigmoid
 param_names{10} = {'\epsilon', '\rho', 'goBias','\beta_{\Omega}', '\thres_{\Omega}', 'reward info'}; % DynamicOmega2Model
 transform{10} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid, @(x) x};
 
+param_names{11} = {'\epsilon', '\rho', 'goBias'};
+transform{11} = {@sigmoid, @exp, @(x) x};
+
+param_names{12} = {'\epsilon', '\rho', 'goBias', '\alpha_{up}', '\alpha_{down}'};
+transform{12} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid};
+
+param_names{13} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', '\alpha_{lr}'}; % DynamicOmega2Model
+transform{13} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid, @sigmoid};
+
 % ----------------------------------------------------------------------- %
 %% 00b) Select model:
 
@@ -239,8 +248,17 @@ transform{9} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', '
 param_names{10} = {'\epsilon', '\rho', 'goBias','\beta_{\Omega}', '\thres_{\Omega}', 'reward info'}; % DynamicOmega2Model
 transform{10} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', '@(x) x'};
 
-model_names = {'Q', 'Q + goBias', 'Q + goBias + \pi', 'Q + V + goBias + \pi', 'Q + V + goBias + \omega', 'Q + V + goBias + \alpha + \kappa + \slope', 'Q + V + goBias + \alpha_{\Omega} + \beta_{\Omega} + thres_{\Omega}', 'dynamic omega + abs pe', 'dynamic omega + abs pe + bounded omega', 'dynamic omega + reward info'};
+param_names{11} = {'\epsilon', '\rho', 'goBias'}; % Model 11
+transform{11} = {'sigmoid', 'exp', '@(x) x'};
 
+param_names{12} = {'\epsilon', '\rho', 'goBias', '\alpha_{up}', '\alpha_{down}'}; % Model 12
+transform{12} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid'};
+
+param_names{13} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', '\alpha_{lr}'}; % DynamicOmega2Model
+transform{13} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
+
+% Model names:
+model_names = {'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M11', 'M12', 'M13'};
 % Create output name:
 modVec = 1:nMod;
 fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s.mat', num2str(modVec, '_%02d')));
@@ -305,7 +323,7 @@ colMat = [0 0 1; 1 0 0; 0 01 0; 0 1 1; 1 0 1;1 0 0; 1 0 0]; % color
 posMat = 1:1:(0.5 + nParam);
 
 % Make figure:
-addpath(fullfile(dirs.root, '/Analyses/Behavior_Scripts/Matlab_Plots/'); % add function barScatter
+addpath(fullfile(dirs.root, '/Analyses/Behavior_Scripts/Matlab_Plots/')); % add function barScatter
 figure('units', 'normalized', 'outerposition', [0 0 1 1]); hold on
 barScatter(ScatterMatrix, [], [], true, true, colMat, posMat);
 

@@ -55,7 +55,7 @@ function [out] = ChemControl_mod11_modSim(parameters, subj)
     q_ng = q0 * rho;
     w_g = q0 * rho;
     w_ng = q0 * rho;
-    sv = q0;
+    sv = q0 * rho;
     initRR=0;
     rr = initRR;
     isHC = 1;
@@ -134,7 +134,7 @@ function [out] = ChemControl_mod11_modSim(parameters, subj)
         q_ng = q0 * rho;
         w_g = q0 * rho;
         w_ng = q0 * rho;
-        sv = q0;
+        sv = q0 * rho;
 
         arr = 0;
         for t = 1:T

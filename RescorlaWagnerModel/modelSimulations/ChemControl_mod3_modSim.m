@@ -44,7 +44,6 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
     outcomes = zeros(B, T);
 
     q0 = [0.5 -0.5 0.5 -0.5];
-    sv = q0;
     hc = 0;
     lc = 0;
     yc = 0;
@@ -54,6 +53,8 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
     q_ng = q0 * rho;
     w_g = q0 * rho;
     w_ng = q0 * rho;
+    sv = q0 * rho;
+
     isHC = 1;
     for t = 1:T
         s = cali_stimuli(t);
@@ -114,6 +115,8 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
         q_ng = q0 * rho;
         w_g = q0 * rho;
         w_ng = q0 * rho;
+        sv = q0 * rho;
+
         arr = 0;
 
         for t = 1:T

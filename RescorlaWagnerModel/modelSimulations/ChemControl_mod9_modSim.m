@@ -59,7 +59,7 @@ function [out] = ChemControl_mod9_modSim(parameters, subj)
     q_ng = q0 * rho;
     w_g = q0 * rho;
     w_ng = q0 * rho;
-    sv = q0;
+    sv = q0 * rho;
 
     isHC = 1;
     Omega = 0;
@@ -135,7 +135,7 @@ function [out] = ChemControl_mod9_modSim(parameters, subj)
         q_ng = q0 * rho;
         w_g = q0 * rho;
         w_ng = q0 * rho;
-        sv = q0;
+        sv = q0 * rho;
 
         Omega = 0;
         omega = lapse_bounds+((1-2*lapse_bounds)/(1+exp(-beta*(Omega-thres))));

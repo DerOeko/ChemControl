@@ -59,7 +59,7 @@ function [out] = ChemControl_mod13_modSim(parameters, subj)
     q_ng = q0 * rho;
     w_g = q0 * rho;
     w_ng = q0 * rho;
-    sv = q0;
+    sv = q0 * rho;
     mu = 0;
     Omega = 0;
     omega = 1 / (1 + exp(-beta * (-thres)));
@@ -136,7 +136,7 @@ function [out] = ChemControl_mod13_modSim(parameters, subj)
         q_ng = q0 * rho;
         w_g = q0 * rho;
         w_ng = q0 * rho;
-        sv = q0;
+        sv = q0 * rho;
 
         arr = 0;
         for t = 1:T

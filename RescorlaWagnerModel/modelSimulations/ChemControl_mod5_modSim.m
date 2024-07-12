@@ -55,7 +55,7 @@ function [out] = ChemControl_mod5_modSim(parameters, subj)
     q_ng = q0 * rho;
     w_g = q0 * rho;
     w_ng = q0 * rho;
-    sv = q0;
+    sv = q0 * rho;
     
     isHC = 1;
     for t = 1:T
@@ -118,7 +118,7 @@ function [out] = ChemControl_mod5_modSim(parameters, subj)
         q_ng = q0 * rho;
         w_g = q0 * rho;
         w_ng = q0 * rho;
-        sv = q0;
+        sv = q0 * rho;
         arr = 0;
 
         for t = 1:T
