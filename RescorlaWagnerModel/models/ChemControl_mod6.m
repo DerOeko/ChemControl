@@ -14,7 +14,7 @@ states = subj.stimuli;
 B = size(outcomes, 1);
 T = size(outcomes, 2);
 initQ = [0.5 -0.5 0.5 -0.5] * rho;
-initV = [0.5 -0.5 0.5 -0.5];
+initV = [0.5 -0.5 0.5 -0.5] * rho;
 
 loglik = 0;
 
@@ -39,18 +39,18 @@ for b = 1:B
         p2 = 1-p1;
         
         %v_pe = sqrt((rho * o - sv(s)).^2 + eps);
-        v_pe = abs(rho * o - sv(s));
+        v_pe = abs(o - sv(s));
         sv(s) = sv(s) + ep * (rho * o - sv(s));
         
         if a==1
             loglik = loglik + log(p1 + eps);
             %q_pe = sqrt((rho * o - q_g(s)).^2 + eps);
-            q_pe = abs(rho*o-q_g(s));
+            q_pe = abs(o-q_g(s));
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
             loglik = loglik + log(p2 + eps);
             %q_pe = sqrt((rho * o - q_ng(s)).^2 + eps);
-            q_pe = abs(rho*o-q_ng(s));
+            q_pe = abs(o-q_ng(s));
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
 

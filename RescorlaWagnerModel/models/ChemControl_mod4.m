@@ -14,7 +14,7 @@ states = subj.stimuli;
 B = size(outcomes, 1);
 T = size(outcomes, 2);
 initQ = [0.5 -0.5 0.5 -0.5] * rho;
-initV = [0.5 -0.5 0.5 -0.5];
+initV = [0.5 -0.5 0.5 -0.5] * rho;
 
 loglik = 0;
 

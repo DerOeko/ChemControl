@@ -9,8 +9,6 @@ goBias = parameters(3);
 alpha_up = ep;
 alpha_down = ep; 
 
-
-
 actions = subj.actions;
 outcomes = subj.outcomes;
 states = subj.stimuli;
@@ -18,7 +16,7 @@ states = subj.stimuli;
 B = size(outcomes, 1);
 T = size(outcomes, 2);
 initQ = [0.5 -0.5 0.5 -0.5] * rho;
-initV = [0.5 -0.5 0.5 -0.5];
+initV = [0.5 -0.5 0.5 -0.5] * rho;
 initRR=0;
 
 loglik = 0;
@@ -58,35 +56,39 @@ for b = 1:B
         if a==1
             q_pe_abs=abs(o - q_g(s));
         else
-            q_pe_abs=abs(o-q_ng(s));
-        
+            q_pe_abs=abs(o - q_ng(s));
+        end
+
         % update Pavlovian model
-        v_pe = rho * o - sv(s);
+        %v_pe = rho * o - sv(s);
         sv(s) = sv(s) + ep * (rho * o - sv(s));
         
         % update Instrumental model
         if a==1
             loglik = loglik + log(p1 + eps);
-            q_pe = rho*o-q_g(s);
+            %q_pe = rho*o-q_g(s);
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
-            p_explore=p2;
+            %p_explore=p2;
         elseif a==2
             loglik = loglik + log(p2 + eps);
-            q_pe = rho*o-q_ng(s);
+            %q_pe = rho*o-q_ng(s);
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
-            p_explore=p1;
+            %p_explore=p1;
         end
         
         % update global reward rate
-        rr=rr+ep*(rho * o - sv(s));
+        %rr=rr+ep*(rho * o - sv(s));
 
         % different logics to update Omega: simply tracks the overall frequency of trials
         % where the prediction error of the Pavlovian model is higher than that of the instrumental model
-        if v_pe_abs>q_pe_abs
-            omega = omega + alpha_up*(int(v_pe_abs>q_pe_abs) - omega);
-        else
-            omega = omega + alpha_down*(int(v_pe_abs>q_pe_abs) - omega);
-                
+        omega = omega + (v_pe_abs>q_pe_abs)*(alpha_up*(1-omega)) + (v_pe_abs>q_pe_abs) *(alpha_down*(0-omega));
+        % if v_pe_abs>q_pe_abs
+        %     omega = omega + alpha_up*(1 - omega);
+        % elseif v_pe_abs<q_pe_abs
+        %     omega = omega + alpha_down*(0 - omega);
+        % else
+        %     omega = omega;
+        % end     
     end
 end
 end

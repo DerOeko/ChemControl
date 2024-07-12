@@ -77,6 +77,13 @@ priors{4} = struct('mean', [0 2 0 0], 'variance', [3 5 10 10]); % prior_model_dy
 priors{5} = struct('mean', [0 2 0 0], 'variance', [3 5 10 3]); % prior_model_fixedOmega
 priors{6} = struct('mean', [0 2 0 0 0 2], 'variance', [3 5 10 3 3 5]); % prior_model_dynamicOmega1
 priors{7} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
+priors{8} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega3
+priors{9} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega4
+priors{10} = struct('mean', [0 2 0 2 0 0], 'variance', [3 5 10 5 3 10]); % prior_model_dynamicOmega5
+priors{11} = struct('mean', [0 2 0], 'variance', [3 5 10]); % prior_model_dynamicOmega6
+priors{12} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 3 3]); % prior_model_dynamicOmega5
+priors{13} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+
 
 % Output names:
 fprintf("Initialize output file names\n")
@@ -95,7 +102,7 @@ subj1 = data{1};
 fprintf(">>>>>  Test with random values\n")
 % a) Random parameter values:
 for iMod = 1:nMod
-    parameters = randn(1, 6);
+    parameters = randn(1, 7);
     F1 = eval(sprintf('ChemControl_mod%d(parameters, subj1)', iMod));
     fprintf('Model %02d: loglik = %f\n', iMod, F1);
 end
@@ -103,21 +110,39 @@ end
 fprintf(">>>>>  Test with extreme values\n")
 % b) Extreme parameter values:
 for iMod = 1:nMod
-    parameters = [-10 10 -10 10 10 10];
+    parameters = [-10 10 -10 10 10 10 10];
     F1 = eval(sprintf('ChemControl_mod%d(parameters, subj1)', iMod));
     fprintf('Model %02d: loglik = %f\n', iMod, F1);
 end
 
 % ----------------------------------------------------------------------- %
-% 1c) LaPlace approximation (cbm_lap):
+%% 1c) LaPlace approximation (cbm_lap):
 
 % All models are fit non-hierarchically.
 
 % Fit for each model separately:
 for iMod = 1:nMod
-    fprintf('Fit model %02d with Laplace approximation\n', iMod)
-    % Format data, model, prior, output file
-    cbm_lap(data, eval(sprintf('@ChemControl_mod%d', iMod)), priors{iMod}, fname_mod{iMod});
+    outputFileName = fullfile(dirs.lap, sprintf('lap_mod%02d.mat', iMod));
+
+    % Check if the model has already been fitted:
+    if exist(outputFileName, 'file')
+        fprintf('Model %02d already fitted. Refit? Y/N [N]: ', iMod);
+        choice = input('', 's');
+        if isempty(choice)
+            choice = 'N';
+        end
+        if upper(choice) == 'Y'
+            fprintf('Refitting model %02d with Laplace approximation\n', iMod);
+            % Format data, model, prior, output file
+            cbm_lap(data, eval(sprintf('@ChemControl_mod%d', iMod)), priors{iMod}, outputFileName);
+        else
+            fprintf('Skipping refit for model %02d\n', iMod);
+        end
+    else
+        fprintf('Fit model %02d with Laplace approximation\n', iMod);
+        % Format data, model, prior, output file
+        cbm_lap(data, eval(sprintf('@ChemControl_mod%d', iMod)), priors{iMod}, outputFileName);
+    end
 end
 
 % ----------------------------------------------------------------------- %
@@ -191,7 +216,7 @@ for iMod = modRange
 end
 
 % ----------------------------------------------------------------------- %
-% 1.2a) Prepare and fit Hierarchical Bayesian inference (cbm_hbi) per SINGLE model:
+%% 1.2a) Prepare and fit Hierarchical Bayesian inference (cbm_hbi) per SINGLE model:
 
 % 1st input: data for all subjects:
 inputFile = fullfile(dirs.results, 'ChemControl_cbm_inputData.mat');
@@ -204,19 +229,36 @@ data = fdata.data;
 % Other inputs: set within loop:
 
 for iMod = 1:nMod
-    fprintf('Fit model %02d with HBI (singular model)\n', iMod);
-
-    % 3rd input: models
-    models = {eval(sprintf('@ChemControl_mod%d', iMod))};
-    fcbm_maps = {fullfile(dirs.lap, sprintf('lap_mod%02d.mat', iMod))};
-
-    % 4th input: lap output files
-    fname_hbi = {fullfile(dirs.hbi, sprintf('hbi_mod_%02d.mat', iMod))};
-
-    % Fit:
-    cbm_hbi(data, models, fcbm_maps, fname_hbi);
+    fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod_%02d.mat', iMod));
+    
+    % Check if the HBI model has already been fitted:
+    if exist(fname_hbi, 'file')
+        fprintf('HBI for model %02d already fitted. Refit? Y/N [N]: ', iMod);
+        choice = input('', 's');
+        if isempty(choice)
+            choice = 'N';
+        end
+        if upper(choice) == 'Y'
+            fprintf('Refitting HBI for model %02d\n', iMod);
+            % 3rd input: models
+            models = {eval(sprintf('@ChemControl_mod%d', iMod))};
+            % 4th input: lap output files
+            fcbm_maps = {fullfile(dirs.lap, sprintf('lap_mod%02d.mat', iMod))};
+            % Fit:
+            cbm_hbi(data, models, fcbm_maps, {fname_hbi});
+        else
+            fprintf('Skipping refit for HBI model %02d\n', iMod);
+        end
+    else
+        fprintf('Fit HBI for model %02d\n', iMod);
+        % 3rd input: models
+        models = {eval(sprintf('@ChemControl_mod%d', iMod))};
+        % 4th input: lap output files
+        fcbm_maps = {fullfile(dirs.lap, sprintf('lap_mod%02d.mat', iMod))};
+        % Fit:
+        cbm_hbi(data, models, fcbm_maps, {fname_hbi});
+    end
 end
-
 % ----------------------------------------------------------------------- %
 % 1.2b) Prepare Hierarchical Bayesian inference (cbm_hbi) across models:
 

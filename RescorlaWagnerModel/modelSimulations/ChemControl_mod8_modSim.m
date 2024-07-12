@@ -32,7 +32,17 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
 
     % Store outputs
     HCcell = cell(B/2, S); % Store go probs in HC
-    LCcell = cell(B/2, S); % Store go probs in LC
+    LCcell = cell(B/4, S); % Store go probs in LC
+    YCcell = cell(B/4, S);
+
+    HCpe = cell(B/2, S); % Store pe for each trial
+    LCpe = cell(B/4, S);
+    YCpe = cell(B/4, S);
+
+    HCarr = cell(B/2, S); % Average reward rate in high control blocks over time
+    LCarr = cell(B/4, S);
+    YCarr = cell(B/4, S);
+    
     actions = zeros(B, T);
     outcomes = zeros(B, T);
     omegas = zeros(B, T);
@@ -40,7 +50,7 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
     q0 = [0.5 -0.5 0.5 -0.5];
     hc = 0;
     lc = 0;
-    
+    yc = 0;
 
     %% Run calibration block
     rewardLossCounter = zeros([1, 2]);
@@ -68,18 +78,18 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
         a = returnAction(p1);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
 
-        v_pe = rho * o - sv(s);
+        v_pe = o - sv(s);
         sv(s) = sv(s) + ep * (rho * o - sv(s));
 
         if a==1
-            q_pe = rho*o-q_g(s);
+            q_pe = o-q_g(s);
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
-            q_pe = rho*o-q_ng(s);
+            q_pe = o-q_ng(s);
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
 
-        Omega = Omega + alpha*(q_pe - v_pe - Omega);
+        Omega = Omega + alpha*(abs(q_pe)- abs(v_pe) - Omega);
         omega = 1/(1+exp(-beta*(Omega-thres)));
 
         counter = updateRewardLossCounter(s, o);
@@ -105,7 +115,7 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
                 isYoked = false;
             case 2
                 isHC = false;
-                isLC = true;
+                isLC = false;
                 isYoked = true;
 
                 rewardedVec = [ones(1, numRewarded) zeros(1, T-numRewarded, 1)];
@@ -115,6 +125,7 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
         end
         hc = hc + isHC;
         lc = lc + isLC;
+        yc = yc + isYoked;
         
         q_g = q0 * rho;
         q_ng = q0 * rho;
@@ -124,7 +135,7 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
 
         Omega = 0;
         omega = 1/(1+exp(-beta*(Omega-thres)));
-
+        arr = 0;
         for t = 1:T
             omegas(b, t) = omega;
             s = stimuli(b, t);
@@ -144,32 +155,43 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
 
 
         p1 = stableSoftmax(w_g(s), w_ng(s));
-            
-            if isHC
-                HCcell{hc, s}(end+1) = p1;
-            else
-                LCcell{lc, s}(end+1) = p1;
-            end
 
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
             actions(b, t) = a;
             outcomes(b, t) = o;
 
-            v_pe = rho * o - sv(s);
+            v_pe = o - sv(s);
             sv(s) = sv(s) + ep * (rho * o - sv(s));
             if a==1
+                pe = o - q_g(s);
                 q_pe = rho*o-q_g(s);
 
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
             elseif a==2
+                pe = o - q_ng(s);
                 q_pe = rho*o-q_ng(s);
 
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
             end
 
-            Omega = Omega + alpha*(q_pe - v_pe - Omega);
+            Omega = Omega + alpha*(abs(q_pe) - abs(v_pe) - Omega);
             omega = 1/(1+exp(-beta*(Omega-thres)));
+            arr = arr + (o - arr);
+            
+            if isHC
+                HCcell{hc, s}(end+1) = p1;
+                HCpe{hc, s}(end+1) = pe;
+                HCarr{hc, s}(end+1) = arr;
+            elseif isLC
+                LCcell{lc, s}(end+1) = p1;
+                LCpe{lc, s}(end+1) = pe;
+                LCarr{lc, s}(end+1) = arr;
+            elseif isYoked
+                YCcell{yc, s}(end+1) = p1;
+                YCpe{yc, s}(end+1) = pe;
+                YCarr{yc, s}(end+1) = arr;
+            end   
         end
     end
     
@@ -263,50 +285,135 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
             total_lossesLC = total_losses(b);
         end    
     end
+        % Filtering data
+    highControlStimuli = zeros(B/2, T);
+    lowControlStimuli = zeros(B/2, T);
+    yokedLowControlStimuli = zeros(B/2, T);
     
-    % Initialize vectors
-    maxWins = 40; % Maximum possible wins
-    %shiftAfterLossCounts = zeros(B, maxWins);
-    shiftAfterLossCounts = zeros(4, maxWins);
-    totalConsecutiveWinsCounts = zeros(4, maxWins);
-    weightedProbShiftAfterLoss = zeros(4, maxWins);
+    highControlActions = zeros(B/2, T);
+    lowControlActions = zeros(B/2, T);
+    yokedLowControlActions = zeros(B/2, T);
+    
+    highControlOutcomes = zeros(B/2, T);
+    lowControlOutcomes = zeros(B/2, T);
+    yokedLowControlOutcomes = zeros(B/2, T);
+    
+    hc = 0;
+    lc = 0;
+    yc = 0; % Counter for YokedLowControl
+    
+    for b = 1:B
+        switch controllabilities(b, 1)
+            case 1
+                hc = hc + 1;
+                highControlStimuli(hc, :) = stimuli(b, :);
+                highControlActions(hc, :) = actions(b, :);
+                highControlOutcomes(hc, :) = outcomes(b, :);
+            case 0
+                lc = lc + 1;
+                lowControlStimuli(lc, :) = stimuli(b, :);
+                lowControlActions(lc, :) = actions(b, :);
+                lowControlOutcomes(lc, :) = outcomes(b, :);
+            case 2
+                yc = yc + 1;
+                yokedLowControlStimuli(yc, :) = stimuli(b, :);
+                yokedLowControlActions(yc, :) = actions(b, :);
+                yokedLowControlOutcomes(yc, :) = outcomes(b, :);
+        end
+    end
+% Initialize vectors
+    maxWins = T; % Maximum possible wins
     S = 4; % Number of stimuli
-
-    for iS = 1:S
-        for b = 1:B
-            consecutiveWins = 0;
-            for t = 1:T - 1
-                if stimuli(b, t) ~= iS
-                    continue
-                end
-                s = stimuli(b, t);
-                o = outcomes(b, t);
-                isWinState = mod(s, 2);
-                if (isWinState && o == 1) || (~isWinState && o == 0)
-                    consecutiveWins = consecutiveWins + 1;
-                else
-                    if consecutiveWins > 0
-                        % Count the total number of consecutive wins
-                        totalConsecutiveWinsCounts(iS, consecutiveWins) = totalConsecutiveWinsCounts(iS, consecutiveWins) + 1;                        
-                        nextStateTrial = find(stimuli(b, t+1:end) == iS, 1, 'first') +t;
-                        if ~isempty(nextStateTrial) && actions(b, t) ~= actions(b, nextStateTrial)
-                            shiftAfterLossCounts(iS, consecutiveWins) = shiftAfterLossCounts(iS, consecutiveWins) + 1;
-                        end
+    
+    % For high control
+    shiftAfterLossCounts_HC = zeros(S, maxWins);
+    totalConsecutiveWinsCounts_HC = zeros(S, maxWins);
+    weightedProbShiftAfterLoss_HC = zeros(S, maxWins);
+    
+    % For low control
+    shiftAfterLossCounts_LC = zeros(S, maxWins);
+    totalConsecutiveWinsCounts_LC = zeros(S, maxWins);
+    weightedProbShiftAfterLoss_LC = zeros(S, maxWins);
+    
+    % For yoked low control
+    shiftAfterLossCounts_YC = zeros(S, maxWins);
+    totalConsecutiveWinsCounts_YC = zeros(S, maxWins);
+    weightedProbShiftAfterLoss_YC = zeros(S, maxWins);
+    
+    % Process each type of control separately
+    for controlType = {'HC', 'LC', 'YC'}
+        ct = controlType{1};
+        
+        switch ct
+            case 'HC'
+                controlStimuli = highControlStimuli;
+                controlActions = highControlActions;
+                controlOutcomes = highControlOutcomes;
+                shiftAfterLossCounts = shiftAfterLossCounts_HC;
+                totalConsecutiveWinsCounts = totalConsecutiveWinsCounts_HC;
+            case 'LC'
+                controlStimuli = lowControlStimuli;
+                controlActions = lowControlActions;
+                controlOutcomes = lowControlOutcomes;
+                shiftAfterLossCounts = shiftAfterLossCounts_LC;
+                totalConsecutiveWinsCounts = totalConsecutiveWinsCounts_LC;
+            case 'YC'
+                controlStimuli = yokedLowControlStimuli;
+                controlActions = yokedLowControlActions;
+                controlOutcomes = yokedLowControlOutcomes;
+                shiftAfterLossCounts = shiftAfterLossCounts_YC;
+                totalConsecutiveWinsCounts = totalConsecutiveWinsCounts_YC;
+        end
+        
+        for iS = 1:S
+            for b = 1:size(controlStimuli, 1)
+                consecutiveWins = 0;
+                for t = 1:T - 1
+                    if controlStimuli(b, t) ~= iS
+                        continue
                     end
-                    consecutiveWins = 0;
+                    s = controlStimuli(b, t);
+                    o = controlOutcomes(b, t);
+                    isWinState = mod(s, 2);
+                    if (isWinState && o == 1) || (~isWinState && o == 0)
+                        consecutiveWins = consecutiveWins + 1;
+                    else
+                        if consecutiveWins > 0
+                            % Count the total number of consecutive wins
+                            totalConsecutiveWinsCounts(iS, consecutiveWins) = totalConsecutiveWinsCounts(iS, consecutiveWins) + 1;                        
+                            nextStateTrial = find(controlStimuli(b, t+1:end) == iS, 1, 'first') + t;
+                            if ~isempty(nextStateTrial) && controlActions(b, t) ~= controlActions(b, nextStateTrial)
+                                shiftAfterLossCounts(iS, consecutiveWins) = shiftAfterLossCounts(iS, consecutiveWins) + 1;
+                            end
+                        end
+                        consecutiveWins = 0;
+                    end
                 end
             end
         end
+        
+        % Calculate probabilities
+        probShiftAfterLoss = shiftAfterLossCounts ./ totalConsecutiveWinsCounts;
+        
+        % Handle division by zero (NaN values)
+        probShiftAfterLoss(isnan(probShiftAfterLoss)) = 0;
+        
+        % Weight the probabilities by their occurrences
+        weightedProbShiftAfterLoss = probShiftAfterLoss .* totalConsecutiveWinsCounts ./ sum(totalConsecutiveWinsCounts, 2);
+        
+        % Store the results in the corresponding arrays
+        switch ct
+            case 'HC'
+                probShiftAfterLoss_HC = probShiftAfterLoss;
+                weightedProbShiftAfterLoss_HC = weightedProbShiftAfterLoss;
+            case 'LC'
+                probShiftAfterLoss_LC = probShiftAfterLoss;
+                weightedProbShiftAfterLoss_LC = weightedProbShiftAfterLoss;
+            case 'YC'
+                probShiftAfterLoss_YC = probShiftAfterLoss;
+                weightedProbShiftAfterLoss_YC = weightedProbShiftAfterLoss;
+        end
     end
-   
-    % Calculate probabilities
-    probShiftAfterLoss = shiftAfterLossCounts ./ totalConsecutiveWinsCounts;
-    
-    % Handle division by zero (NaN values)
-    probShiftAfterLoss(isnan(probShiftAfterLoss)) = 0;
-
-    % Weight the probabilities by their occurrences
-    weightedProbShiftAfterLoss = probShiftAfterLoss .* totalConsecutiveWinsCounts ./ sum(totalConsecutiveWinsCounts);
     
     % Controllability array (for plotting)
     plotControl = zeros(B, T);
@@ -332,6 +439,13 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
     %% Save as output object:
     out.HCcell = HCcell;
     out.LCcell = LCcell;
+    out.YCcell = YCcell;
+    out.HCpe = HCpe;
+    out.LCpe = LCpe;
+    out.YCpe = YCpe;
+    out.HCarr = HCarr;
+    out.LCarr = LCarr;
+    out.YCarr = YCarr;
     out.randHC = randHCs;
     out.randLC = randLCs;
     out.stimuli = stimuli;
@@ -349,8 +463,12 @@ function [out] = ChemControl_mod8_modSim(parameters, subj)
     out.plotReward = plotReward;
     out.arr = averageRewardRate;
     out.alr = averageLossRate;
-    out.probShiftAfterLoss = probShiftAfterLoss;
-    out.weightedProbShiftAfterLoss = weightedProbShiftAfterLoss;
     out.omegas = omegas;
+    out.probShiftAfterLoss_HC = probShiftAfterLoss_HC;
+    out.probShiftAfterLoss_LC = probShiftAfterLoss_LC;
+    out.probShiftAfterLoss_YC = probShiftAfterLoss_YC;
+    out.weightedProbShiftAfterLoss_HC = weightedProbShiftAfterLoss_HC;
+    out.weightedProbShiftAfterLoss_LC = weightedProbShiftAfterLoss_LC;
+    out.weightedProbShiftAfterLoss_YC = weightedProbShiftAfterLoss_YC;
 
 end

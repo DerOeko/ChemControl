@@ -1,15 +1,17 @@
-function [out] = ChemControl_mod7_modSim(parameters, subj)
+function [out] = ChemControl_mod10_modSim(parameters, subj)
 % Standard Q-learning model with delta learning rule.
     
     % ----------------------------------------------------------------------- %
     %% Retrieve parameters:
     ep = sigmoid(parameters(1));
     rho = exp(parameters(2));
-    gB = parameters(3);
-    alpha = sigmoid(parameters(4));
-    beta = exp(parameters(5));
-    thres = tanh(0.5*parameters(6));
-
+    goBias = parameters(3);
+    alpha = ep; % sigmoid(parameters(4)); % probably not needed to have 2 LR
+    beta = exp(parameters(4));
+    thres = scaledSigmoid(parameters(5));
+    
+    % additional parameters
+    w_rew_info=parameters(6); % may go both ways
     % ----------------------------------------------------------------------- %
     %% Unpack data:
 
@@ -59,19 +61,23 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
     w_g = q0 * rho;
     w_ng = q0 * rho;
     sv = q0;
-
+    initRR=0;
+    rr = initRR;
     isHC = 1;
     Omega = 0;
-    omega = 1/(1+exp(-beta*(Omega-thres)));
+    
 
     for t = 1:T
+        
         s = cali_stimuli(t);
         randHC = cali_randHC(t);
         randLC = cali_randLC(t);
         isRewarded = cali_randRewards(t);
+        Xomega=-beta*(w_rew_info*(sv(s)/rho)+(1-w_rew_info)*Omega-thres);
 
-        w_g(s) = (1-omega) * q_g(s) + gB + omega * sv(s);
-        w_ng(s) = (1-omega) * q_ng(s);
+        omega=1/(1+exp(Xomega));
+        w_g(s) = omega * q_g(s) + (1-omega) * sv(s) + goBias;
+        w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
 
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
@@ -84,13 +90,17 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
         if a==1
             q_pe = o-q_g(s);
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+            p_explore=1-p1;
+
         elseif a==2
             q_pe = o-q_ng(s);
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
-        end
+            p_explore=p1;
 
-        Omega = Omega + alpha*(q_pe - v_pe - Omega);
-        omega = 1/(1+exp(-beta*(Omega-thres)));
+        end
+        % update global reward rate
+        rr=rr+ep*(rho * o - sv(s));
+        Omega = Omega + (alpha*p_explore)*(abs(v_pe)-abs(q_pe) - Omega);
 
         counter = updateRewardLossCounter(s, o);
         rewardLossCounter = rewardLossCounter + counter;
@@ -133,10 +143,11 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
         w_ng = q0 * rho;
         sv = q0;
 
-        Omega = 0;
-        omega = 1/(1+exp(-beta*(Omega-thres)));
+
         arr = 0;
         for t = 1:T
+            Xomega=-beta*(w_rew_info*(sv(s)/rho)+(1-w_rew_info)*Omega-thres);
+            omega=1/(1+exp(Xomega));
             omegas(b, t) = omega;
             s = stimuli(b, t);
             isWinState = mod(s, 2);
@@ -150,11 +161,11 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
                 isRewarded = avoidedVec(t);
             end
 
-            w_g(s) = (1-omega) * q_g(s) + gB + omega * sv(s);
-            w_ng(s) = (1-omega) * q_ng(s);
+            w_g(s) = omega * q_g(s) + (1-omega) * sv(s) + goBias;
+            w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
 
 
-        p1 = stableSoftmax(w_g(s), w_ng(s));
+            p1 = stableSoftmax(w_g(s), w_ng(s));
 
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
@@ -168,15 +179,19 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
                 q_pe = o-q_g(s);
 
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+                p_explore=1-p1;
+
             elseif a==2
                 pe = rho * o - q_ng(s);
                 q_pe = o-q_ng(s);
 
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+                p_explore=p1;
             end
 
-            Omega = Omega + alpha*(q_pe - v_pe - Omega);
-            omega = 1/(1+exp(-beta*(Omega-thres)));
+                % update global reward rate
+            rr=rr+ep*(rho * o - sv(s));
+            Omega = Omega + (alpha*p_explore)*(abs(v_pe)-abs(q_pe) - Omega);
             arr = arr + (o - arr);
             
             if isHC
@@ -193,6 +208,7 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
                 YCarr{yc, s}(end+1) = arr;
             end   
         end
+
     end
     
     % ----------------------------------------------------------------------- %

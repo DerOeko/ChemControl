@@ -23,7 +23,7 @@ states = subj.stimuli;
 B = size(outcomes, 1);
 T = size(outcomes, 2);
 initQ = [0.5 -0.5 0.5 -0.5] * rho;
-initV = [0.5 -0.5 0.5 -0.5];
+initV = [0.5 -0.5 0.5 -0.5] * rho;
 initRR=0;
 
 loglik = 0;
@@ -86,37 +86,30 @@ for b = 1:B
         
         % no go prob
         p2 = 1-p1;
-        
-        % compute absolute reward prediction errors (between 0 and 1)
-        v_pe_abs=abs(o - sv(s));
-        if a==1
-            q_pe_abs=abs(o - q_g(s));
-        else
-            q_pe_abs=abs(o-q_ng(s));
-        
+
         % update Pavlovian model
-        v_pe = rho * o - sv(s);
+        v_pe = o - sv(s);
         sv(s) = sv(s) + ep * (rho * o - sv(s));
         
         % update Instrumental model
         if a==1
             loglik = loglik + log(p1 + eps);
-            q_pe = rho*o-q_g(s);
+            q_pe = o-q_g(s);
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
             p_explore=p2;
         elseif a==2
             loglik = loglik + log(p2 + eps);
-            q_pe = rho*o-q_ng(s);
+            q_pe = o-q_ng(s);
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
             p_explore=p1;
         end
         
         % update global reward rate
-        rr=rr+ep*(rho * o - sv(s));
+        rr=rr+ep*(o - sv(s));
 
         % update Omega in a way that scales with the "probability" that the
         % participant has made an exploratory decision on that trial
-        Omega = Omega + (alpha*p_explore)*(v_pe_abs-q_pe_abs - Omega);
+        Omega = Omega + (alpha*p_explore)*(abs(v_pe)-abs(q_pe)- Omega);
         
         % to update continuously, use instead
         % Omega = Omega + alpha*(abs(v_pe)-abs(q_pe) - Omega);

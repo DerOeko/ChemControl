@@ -1,15 +1,13 @@
-function [out] = ChemControl_mod7_modSim(parameters, subj)
+function [out] = ChemControl_mod12_modSim(parameters, subj)
 % Standard Q-learning model with delta learning rule.
     
     % ----------------------------------------------------------------------- %
     %% Retrieve parameters:
     ep = sigmoid(parameters(1));
     rho = exp(parameters(2));
-    gB = parameters(3);
-    alpha = sigmoid(parameters(4));
-    beta = exp(parameters(5));
-    thres = tanh(0.5*parameters(6));
-
+    goBias = parameters(3);
+    alpha_up = sigmoid(parameters(4)); % probably not needed to have 2 LR
+    alpha_down = sigmoid(parameters(5)); % probably not needed to have 2 LR
     % ----------------------------------------------------------------------- %
     %% Unpack data:
 
@@ -23,7 +21,6 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
     cali_randHC = subj.cali_randHC;
     cali_randLC = subj.cali_randLC;
     cali_randRewards = subj.cali_randReward;
-
 
     % Data dimensions:
     B = size(stimuli, 1); % Number of blocks
@@ -59,44 +56,51 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
     w_g = q0 * rho;
     w_ng = q0 * rho;
     sv = q0;
-
+    initRR=0;
+    rr = initRR;
     isHC = 1;
-    Omega = 0;
-    omega = 1/(1+exp(-beta*(Omega-thres)));
+    omega = 0.5;
 
     for t = 1:T
+        
         s = cali_stimuli(t);
         randHC = cali_randHC(t);
         randLC = cali_randLC(t);
         isRewarded = cali_randRewards(t);
 
-        w_g(s) = (1-omega) * q_g(s) + gB + omega * sv(s);
-        w_ng(s) = (1-omega) * q_ng(s);
+        w_g(s) = omega * q_g(s) + (1 - omega) * sv(s) + goBias;
+        w_ng(s) = omega * q_ng(s) + (1 - omega) * (-sv(s));
 
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
         a = returnAction(p1);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
 
-        v_pe = o - sv(s);
-        sv(s) = sv(s) + ep * (rho * o - sv(s));
-
-        if a==1
-            q_pe = o-q_g(s);
-            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
-        elseif a==2
-            q_pe = o-q_ng(s);
-            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+        v_pe_abs = abs(o - sv(s));
+        if a == 1
+            q_pe_abs = abs(o - q_g(s));
+        else
+            q_pe_abs = abs(o - q_ng(s));
         end
 
-        Omega = Omega + alpha*(q_pe - v_pe - Omega);
-        omega = 1/(1+exp(-beta*(Omega-thres)));
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
+
+        if a == 1
+            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+            p_explore = 1 - p1;
+        elseif a == 2
+            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+            p_explore = p1;
+        end
+
+        rr = rr + ep * (rho * o - sv(s));
+        omega = omega + (v_pe_abs > q_pe_abs) * (alpha_up * (1 - omega)) + (v_pe_abs < q_pe_abs) * (alpha_down * (0 - omega));
 
         counter = updateRewardLossCounter(s, o);
         rewardLossCounter = rewardLossCounter + counter;
     end
    
-    M = rewardLossCounter/(T/2);
+    M = rewardLossCounter / (T / 2);
     averageRewardRate = M(1);
     averageLossRate = M(2);
     numRewarded = round(averageRewardRate * T); % number of rewarded trials
@@ -118,9 +122,9 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
                 isLC = false;
                 isYoked = true;
 
-                rewardedVec = [ones(1, numRewarded) zeros(1, T-numRewarded, 1)];
+                rewardedVec = [ones(1, numRewarded), zeros(1, T - numRewarded)];
                 rewardedVec = rewardedVec(randperm(length(rewardedVec)));
-                avoidedVec = [ones(1, numAvoided) zeros(1, T-numAvoided, 1)];
+                avoidedVec = [ones(1, numAvoided), zeros(1, T - numAvoided)];
                 avoidedVec = avoidedVec(randperm(length(avoidedVec)));
         end
         hc = hc + isHC;
@@ -133,11 +137,8 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
         w_ng = q0 * rho;
         sv = q0;
 
-        Omega = 0;
-        omega = 1/(1+exp(-beta*(Omega-thres)));
         arr = 0;
         for t = 1:T
-            omegas(b, t) = omega;
             s = stimuli(b, t);
             isWinState = mod(s, 2);
             randHC = randHCs(b, t); % outcome matters (1, 0, 2)
@@ -150,51 +151,49 @@ function [out] = ChemControl_mod7_modSim(parameters, subj)
                 isRewarded = avoidedVec(t);
             end
 
-            w_g(s) = (1-omega) * q_g(s) + gB + omega * sv(s);
-            w_ng(s) = (1-omega) * q_ng(s);
+            w_g(s) = omega * q_g(s) + (1 - omega) * sv(s) + goBias;
+            w_ng(s) = omega * q_ng(s) + (1 - omega) * (-sv(s));
 
-
-        p1 = stableSoftmax(w_g(s), w_ng(s));
+            p1 = stableSoftmax(w_g(s), w_ng(s));
 
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
             actions(b, t) = a;
             outcomes(b, t) = o;
 
-            v_pe = o - sv(s);
-            sv(s) = sv(s) + ep * (rho * o - sv(s));
-            if a==1
-                pe = rho * o - q_g(s);
-                q_pe = o-q_g(s);
-
+            v_pe_abs = abs(o - sv(s));
+            if a == 1
+                q_pe_abs = abs(o - q_g(s));
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
-            elseif a==2
-                pe = rho * o - q_ng(s);
-                q_pe = o-q_ng(s);
-
+                p_explore = 1 - p1;
+            elseif a == 2
+                q_pe_abs = abs(o - q_ng(s));
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+                p_explore = p1;
             end
 
-            Omega = Omega + alpha*(q_pe - v_pe - Omega);
-            omega = 1/(1+exp(-beta*(Omega-thres)));
+            rr = rr + ep * (rho * o - sv(s));
+            omega = omega + (v_pe_abs > q_pe_abs) * (alpha_up * (1 - omega)) + (v_pe_abs < q_pe_abs) * (alpha_down * (0 - omega));
             arr = arr + (o - arr);
-            
+            omegas(b, t) = omega;
+
             if isHC
-                HCcell{hc, s}(end+1) = p1;
-                HCpe{hc, s}(end+1) = pe;
-                HCarr{hc, s}(end+1) = arr;
+                HCcell{hc, s}(end + 1) = p1;
+                HCpe{hc, s}(end + 1) = v_pe_abs;
+                HCarr{hc, s}(end + 1) = arr;
             elseif isLC
-                LCcell{lc, s}(end+1) = p1;
-                LCpe{lc, s}(end+1) = pe;
-                LCarr{lc, s}(end+1) = arr;
+                LCcell{lc, s}(end + 1) = p1;
+                LCpe{lc, s}(end + 1) = v_pe_abs;
+                LCarr{lc, s}(end + 1) = arr;
             elseif isYoked
-                YCcell{yc, s}(end+1) = p1;
-                YCpe{yc, s}(end+1) = pe;
-                YCarr{yc, s}(end+1) = arr;
+                YCcell{yc, s}(end + 1) = p1;
+                YCpe{yc, s}(end + 1) = v_pe_abs;
+                YCarr{yc, s}(end + 1) = arr;
             end   
         end
+
     end
-    
+       
     % ----------------------------------------------------------------------- %
     %% Win stay-lose shift:
 

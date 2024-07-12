@@ -1,13 +1,9 @@
-function figHandle = plotOmegas(averageOmegas6, averageOmegas7, cProbs, figHandle)
+function figHandle = plotOmegas(averageOmegasList, cProbs, figHandle)
 arguments
-    averageOmegas6;
-    averageOmegas7;
+    averageOmegasList;
     cProbs;
     figHandle = [];
 end
-
-% Concatenate the averageOmegas cell arrays
-averageOmegasList = [averageOmegas6, averageOmegas7];
 
 % Initialize the figure
 if isempty(figHandle)
@@ -18,36 +14,55 @@ end
 
 % Iterate through each controllability schedule
 nSchedules = size(averageOmegasList, 1);
+nModels = size(averageOmegasList, 2); % Assuming each row has all averageOmegas
+
 for iSchedule = 1:nSchedules
-    clf; % Clear the figure for the next plot
+    clf; % Clear the figure for each schedule
 
-    % Get the average omegas for the current schedule for both models
-    averageOmegas6 = averageOmegasList{iSchedule, 1};
-    averageOmegas7 = averageOmegasList{iSchedule, 2};
+    % Collect all the average omegas to determine the overall min and max
+    allOmegas = [];
+    for iModel = 1:nModels
+        averageOmegas = averageOmegasList{iSchedule, iModel};
+        if ~isempty(averageOmegas)
+            allOmegas = [allOmegas; averageOmegas];
+        end
+    end
 
-    % Skip the schedule if either averageOmegas6 or averageOmegas7 is empty
-    if isempty(averageOmegas6) || isempty(averageOmegas7)
+    % Skip the schedule if all averageOmegas are empty
+    if isempty(allOmegas)
         continue;
     end
-    
-    % Get the minimum and maximum values of averageOmegas
-    minValue = min([averageOmegas6; averageOmegas7], [], 'all');
-    maxValue = max([averageOmegas6; averageOmegas7], [], 'all');
-    
-    % Scale cProbs to the range of averageOmegas
-    scaledOutcomeProbs = rescale(cProbs(iSchedule, :), minValue, maxValue);
 
-    % Plot the data
-    hold on
-    plot(1:length(averageOmegas6), averageOmegas6, 'LineWidth', 2, 'DisplayName', 'Average Omegas 6')
-    plot(1:length(averageOmegas7), averageOmegas7, 'LineWidth', 2, 'DisplayName', 'Average Omegas 7')
-    plot(1:length(scaledOutcomeProbs), scaledOutcomeProbs, 'LineWidth', 3, 'LineStyle', '--', 'Color', '#AEAEAE', 'DisplayName', 'Scaled Outcome Probability')
-    hold off
+    % Prepare subplots for each model in a 2 by ceil(nModels/2) grid
+    nCols = ceil(nModels / 4);
+    disp(nCols)
+    for iModel = 1:nModels
+        subplot(4, nCols, iModel); % Create a subplot for each model
 
-    xlabel('Trial number')
-    ylabel('Omega value ([0, 1])')
-    legend('Location', 'best')
-    title(sprintf('Change of the Pavlovian Weighting \\omega over time for Schedule %d', iSchedule))
+        averageOmegas = averageOmegasList{iSchedule, iModel};
+        if ~isempty(averageOmegas)
+            plot(1:length(averageOmegas), averageOmegas, 'LineWidth', 2, 'DisplayName', sprintf('Model %d', iModel + 5), 'Color', lines(1));
+            ylabel('Omega value')
+            hold on; % Keep plot for adding scaled probabilities
+
+            % Customize each subplot with appropriate title
+            title(sprintf('Model %d', iModel + 5));
+            
+            if iModel == nModels || iModel == nCols % Only add labels and legends on the last plots of each row
+                xlabel('Trial number');
+                legend('show', 'Location', 'best');
+            end
+        end
+    end
+
+    % Plot the outcome probabilities in all subplots
+    for iModel = 1:nModels
+        subplot(4, nCols, iModel);
+        plot(1:length(cProbs(iSchedule, :)), cProbs(iSchedule, :), 'LineWidth', 3, 'LineStyle', '--', 'Color', '#AEAEAE', 'DisplayName', 'Scaled Outcome Probability')
+    end
+
+    % Add a super title for the entire schedule
+    sgtitle(sprintf('Change of Pavlovian Weighting \\omega over time for Schedule %d', iSchedule));
 
     % Wait for button press before proceeding to the next schedule
     disp('Press any key to continue to the next schedule...')

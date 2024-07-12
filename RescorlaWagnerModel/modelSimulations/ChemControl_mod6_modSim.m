@@ -76,14 +76,14 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
 
         a = returnAction(p1);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
-        v_pe = abs(rho * o - sv(s));
+        v_pe = abs(o - sv(s));
         sv(s) = sv(s) + ep * (rho * o - sv(s));
 
         if a==1
-            q_pe = abs(rho*o-q_g(s));
+            q_pe = abs(o-q_g(s));
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
-            q_pe = abs(rho*o-q_ng(s));
+            q_pe = abs(o-q_ng(s));
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
 
@@ -162,17 +162,17 @@ function [out] = ChemControl_mod6_modSim(parameters, subj)
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
             actions(b, t) = a;
             outcomes(b, t) = o;
-            v_pe = abs(rho * o - sv(s));
+            v_pe = abs(o - sv(s));
 
             sv(s) = sv(s) + ep * (rho * o - sv(s));
             if a==1
                 pe = rho * o - q_g(s);
-                q_pe = abs(rho*o-q_g(s));
+                q_pe = abs(o-q_g(s));
 
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
             elseif a==2
                 pe = rho * o - q_ng(s);
-                q_pe = abs(rho*o-q_ng(s));
+                q_pe = abs(o-q_ng(s));
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
             end
 

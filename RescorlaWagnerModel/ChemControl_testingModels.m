@@ -69,7 +69,7 @@ for iMod = 1:nMod
 end
 
 %% 01c) Alternative C: Set parameters manually:
-groupParams{8} = [groupParams{1} -0.1];
+%groupParams{8} = [groupParams{1} -0.1];
 
 %% 02) SIMULATE
 %% 02a) Run settings
@@ -159,6 +159,13 @@ YCarr_mean = zeros(nTrials/4, 4, nRuns);
 
 omegas6 = cell(nSchedules, 1);
 omegas7 = cell(nSchedules, 1);
+omegas8 = cell(nSchedules, 1);
+omegas9 = cell(nSchedules, 1);
+omegas10 = cell(nSchedules, 1);
+omegas11 = cell(nSchedules, 1);
+omegas12 = cell(nSchedules, 1);
+omegas13 = cell(nSchedules, 1);
+
 cPs = zeros(nSchedules, nTrials*nBlocks);
 for iSchedule = 1:nSchedules
     for iB = 1:nBlocks
@@ -180,8 +187,8 @@ for iMod = 1:nMod
     for iRun = 1:nRuns
         subj = sim_subj(nBlocks, nTrials);
         out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
-        if iMod == 6 || iMod == 7
-            % Store omegas for models 6 and 7
+        if iMod == 6 || iMod == 7 || iMod == 8 || iMod == 9 || iMod == 10 || iMod == 11 || iMod == 12 || iMod == 13
+            % Store omegas for models 6 to 13
             schedule_idx = subj.selected_schedule_idx;
             reshaped_omegas = reshape(out.omegas', [nTrials*nBlocks, 1]);
             
@@ -196,6 +203,42 @@ for iMod = 1:nMod
                     omegas7{schedule_idx} = reshaped_omegas;
                 else
                     omegas7{schedule_idx} = [omegas7{schedule_idx}, reshaped_omegas];
+                end            
+            elseif iMod == 8
+                if isempty(omegas8{schedule_idx})
+                    omegas8{schedule_idx} = reshaped_omegas;
+                else
+                    omegas8{schedule_idx} = [omegas8{schedule_idx}, reshaped_omegas];
+                end            
+            elseif iMod == 9
+                if isempty(omegas9{schedule_idx})
+                    omegas9{schedule_idx} = reshaped_omegas;
+                else
+                    omegas9{schedule_idx} = [omegas9{schedule_idx}, reshaped_omegas];
+                end            
+            elseif iMod == 10
+                if isempty(omegas10{schedule_idx})
+                    omegas10{schedule_idx} = reshaped_omegas;
+                else
+                    omegas10{schedule_idx} = [omegas10{schedule_idx}, reshaped_omegas];
+                end            
+            elseif iMod == 11
+                if isempty(omegas11{schedule_idx})
+                    omegas11{schedule_idx} = reshaped_omegas;
+                else
+                    omegas11{schedule_idx} = [omegas11{schedule_idx}, reshaped_omegas];
+                end            
+            elseif iMod == 12
+                if isempty(omegas12{schedule_idx})
+                    omegas12{schedule_idx} = reshaped_omegas;
+                else
+                    omegas12{schedule_idx} = [omegas12{schedule_idx}, reshaped_omegas];
+                end            
+            elseif iMod == 13
+                if isempty(omegas13{schedule_idx})
+                    omegas13{schedule_idx} = reshaped_omegas;
+                else
+                    omegas13{schedule_idx} = [omegas13{schedule_idx}, reshaped_omegas];
                 end            
             end
         end
@@ -297,15 +340,15 @@ for iMod = 1:nMod
     YCarr_mean = mean(YCarr_mean, 3);
 
     figure(fig1);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotLearningCurves(HCmeans, sprintf("M%02d", iMod), fig1);
     
     figure(fig2);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotLearningCurves(LCmeans, sprintf("M%02d", iMod), fig2);
     
     figure(fig3)
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotLearningCurves(YCmeans, sprintf("M%02d", iMod), fig3);
 
     shiftMeans_HC = squeeze(mean(shiftMeans_HC, 1));
@@ -313,46 +356,51 @@ for iMod = 1:nMod
     shiftMeans_YC = squeeze(mean(shiftMeans_YC, 1));
 
     figure(fig4);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotShiftLoss(shiftMeans_HC, iMod, fig4);
 
     figure(fig5);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotShiftLoss(shiftMeans_LC, iMod, fig5);
 
     figure(fig6);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotShiftLoss(shiftMeans_YC, iMod, fig6);
 
     figure(fig7);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotPredictionErrors(HCpes_mean, iMod, fig7);
 
     figure(fig8);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotPredictionErrors(LCpes_mean, iMod, fig8);
 
     figure(fig9);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotPredictionErrors(YCpes_mean, iMod, fig9);
 
     figure(fig11);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotAverageRewardRate(HCarr_mean, sprintf("M%02d", iMod), fig11);
     
     figure(fig12);
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotAverageRewardRate(LCarr_mean, sprintf("M%02d", iMod), fig12);
     
     figure(fig13)
-    subplot(2, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/2), iMod);
     plotAverageRewardRate(YCarr_mean, sprintf("M%02d", iMod), fig13);
 end
 
-% Plot average Omega
+% Initialize cell arrays for average Omegas
 averageOmegas6 = cell(nSchedules, 1);
 averageOmegas7 = cell(nSchedules, 1);
-
+averageOmegas8 = cell(nSchedules, 1);
+averageOmegas9 = cell(nSchedules, 1);
+averageOmegas10 = cell(nSchedules, 1);
+averageOmegas11 = cell(nSchedules, 1);
+averageOmegas12 = cell(nSchedules, 1);
+averageOmegas13 = cell(nSchedules, 1);
 
 for schedule_idx = 1:nSchedules
     if ~isempty(omegas6{schedule_idx})
@@ -363,11 +411,34 @@ for schedule_idx = 1:nSchedules
         % Average across columns for schedule_idx
         averageOmegas7{schedule_idx} = mean(omegas7{schedule_idx}, 2);
     end
+    if ~isempty(omegas8{schedule_idx})
+        % Average across columns for schedule_idx
+        averageOmegas8{schedule_idx} = mean(omegas8{schedule_idx}, 2);
+    end
+    if ~isempty(omegas9{schedule_idx})
+        % Average across columns for schedule_idx
+        averageOmegas9{schedule_idx} = mean(omegas9{schedule_idx}, 2);
+    end
+    if ~isempty(omegas10{schedule_idx})
+        % Average across columns for schedule_idx
+        averageOmegas10{schedule_idx} = mean(omegas10{schedule_idx}, 2);
+    end
+    if ~isempty(omegas11{schedule_idx})
+        % Average across columns for schedule_idx
+        averageOmegas11{schedule_idx} = mean(omegas11{schedule_idx}, 2);
+    end
+    if ~isempty(omegas12{schedule_idx})
+        % Average across columns for schedule_idx
+        averageOmegas12{schedule_idx} = mean(omegas12{schedule_idx}, 2);
+    end
+    if ~isempty(omegas13{schedule_idx})
+        % Average across columns for schedule_idx
+        averageOmegas13{schedule_idx} = mean(omegas13{schedule_idx}, 2);
+    end
 end
 
+% Plot the average Omegas
 figure(fig10);
-plotOmegas(averageOmegas6, averageOmegas7, cPs, fig10);
-
-
+plotOmegas([averageOmegas6, averageOmegas7, averageOmegas8, averageOmegas9, averageOmegas10, averageOmegas11, averageOmegas12, averageOmegas13], cPs, fig10);
 
 

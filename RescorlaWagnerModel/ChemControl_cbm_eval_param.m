@@ -55,6 +55,14 @@ transform{6} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid, @exp};
 param_names{7} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
 transform{7} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid};
 
+param_names{8} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{8} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid};
+
+param_names{9} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', 'lapse bounds'}; % DynamicOmega2Model
+transform{9} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid, @sigmoid};
+
+param_names{10} = {'\epsilon', '\rho', 'goBias','\beta_{\Omega}', '\thres_{\Omega}', 'reward info'}; % DynamicOmega2Model
+transform{10} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid, @(x) x};
 
 % ----------------------------------------------------------------------- %
 %% 00b) Select model:
@@ -222,7 +230,16 @@ transform{6} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp'};
 param_names{7} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
 transform{7} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
 
-model_names = {'Q', 'Q + goBias', 'Q + goBias + \pi', 'Q + V + goBias + \pi', 'Q + V + goBias + \omega', 'Q + V + goBias + \alpha + \kappa + \slope', 'Q + V + goBias + \alpha_{\Omega} + \beta_{\Omega} + thres_{\Omega}' };
+param_names{8} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{8} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
+
+param_names{9} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', 'lapse bounds'}; % DynamicOmega2Model
+transform{9} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
+
+param_names{10} = {'\epsilon', '\rho', 'goBias','\beta_{\Omega}', '\thres_{\Omega}', 'reward info'}; % DynamicOmega2Model
+transform{10} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', '@(x) x'};
+
+model_names = {'Q', 'Q + goBias', 'Q + goBias + \pi', 'Q + V + goBias + \pi', 'Q + V + goBias + \omega', 'Q + V + goBias + \alpha + \kappa + \slope', 'Q + V + goBias + \alpha_{\Omega} + \beta_{\Omega} + thres_{\Omega}', 'dynamic omega + abs pe', 'dynamic omega + abs pe + bounded omega', 'dynamic omega + reward info'};
 
 % Create output name:
 modVec = 1:nMod;

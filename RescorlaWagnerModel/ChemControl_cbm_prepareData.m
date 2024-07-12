@@ -47,7 +47,7 @@ nTrials = 40; % how many trials in a block
 subFind = dir(fullfile(dirs.behav, "*.csv"));
 subFind = {subFind.name};
 
-invalidSubs = [2 10 19 20];
+invalidSubs = [2 10 19 20 38 39 40];
 validSubs = setdiff(1:numel(subFind), invalidSubs);
 subFind = {subFind{validSubs}};
 nSub = numel(subFind);
