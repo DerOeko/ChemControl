@@ -94,7 +94,12 @@ function [out] = ChemControl_mod11_modSim(parameters, subj)
         end
 
         rr = rr + ep * (rho * o - sv(s));
-        omega = omega + (v_pe_abs > q_pe_abs) * (alpha_up * (1 - omega)) + (v_pe_abs < q_pe_abs) * (alpha_down * (0 - omega));
+        % update global reward rate
+        %rr=rr+ep*(rho * o - sv(s));
+        sigdiff=sigmoid((v_pe_abs-q_pe_abs)*1000);
+        % different logics to update Omega: simply tracks the overall frequency of trials
+        % where the prediction error of the Pavlovian model is higher than that of the instrumental model
+        omega = omega + (sigdiff)*(alpha_up*(1-omega)) + (1-sigdiff) *(alpha_down*(0-omega));
         counter = updateRewardLossCounter(s, o);
         rewardLossCounter = rewardLossCounter + counter;
     end
@@ -162,32 +167,41 @@ function [out] = ChemControl_mod11_modSim(parameters, subj)
 
             v_pe_abs = abs(o - sv(s));
             if a == 1
+                pe = rho * o - q_g(s);
+
                 q_pe_abs = abs(o - q_g(s));
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
                 p_explore = 1 - p1;
             elseif a == 2
+                pe = rho * o - q_ng(s);
+
                 q_pe_abs = abs(o - q_ng(s));
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
                 p_explore = p1;
             end
 
             rr = rr + ep * (rho * o - sv(s));
-            omega = omega + (v_pe_abs > q_pe_abs) * (alpha_up * (1 - omega)) + (v_pe_abs < q_pe_abs) * (alpha_down * (0 - omega));
+            % update global reward rate
+            %rr=rr+ep*(rho * o - sv(s));
+            sigdiff=sigmoid((v_pe_abs-q_pe_abs)*1000);
+            % different logics to update Omega: simply tracks the overall frequency of trials
+            % where the prediction error of the Pavlovian model is higher than that of the instrumental model
+            omega = omega + (sigdiff)*(alpha_up*(1-omega)) + (1-sigdiff) *(alpha_down*(0-omega));
             omegas(b, t) = omega;
 
             arr = arr + (o - arr);
             
             if isHC
                 HCcell{hc, s}(end + 1) = p1;
-                HCpe{hc, s}(end + 1) = v_pe_abs;
+                HCpe{hc, s}(end + 1) = pe;
                 HCarr{hc, s}(end + 1) = arr;
             elseif isLC
                 LCcell{lc, s}(end + 1) = p1;
-                LCpe{lc, s}(end + 1) = v_pe_abs;
+                LCpe{lc, s}(end + 1) = pe;
                 LCarr{lc, s}(end + 1) = arr;
             elseif isYoked
                 YCcell{yc, s}(end + 1) = p1;
-                YCpe{yc, s}(end + 1) = v_pe_abs;
+                YCpe{yc, s}(end + 1) = pe;
                 YCarr{yc, s}(end + 1) = arr;
             end   
         end

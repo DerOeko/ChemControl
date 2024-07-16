@@ -71,7 +71,6 @@ function [out] = ChemControl_mod13_modSim(parameters, subj)
         randLC = cali_randLC(t);
         isRewarded = cali_randRewards(t);
 
-        mu = mu + alpha_lr * (isRewarded - mu);
 
         w_g(s) = (1 - omega) * q_g(s) + goBias + omega * sv(s);
         w_ng(s) = (1 - omega) * q_ng(s);
@@ -80,6 +79,7 @@ function [out] = ChemControl_mod13_modSim(parameters, subj)
 
         a = returnAction(p1);
         o = returnReward(s, a, true, randLC, randHC, isRewarded);
+        mu = mu + alpha_lr * (o - mu);
 
         v_pe = o - sv(s) + mu;
         if a == 1
@@ -152,7 +152,6 @@ function [out] = ChemControl_mod13_modSim(parameters, subj)
                 isRewarded = avoidedVec(t);
             end
 
-            mu = mu + alpha_lr * (isRewarded - mu);
 
             w_g(s) = (1 - omega) * q_g(s) + goBias + omega * sv(s);
             w_ng(s) = (1 - omega) * q_ng(s);
@@ -161,15 +160,21 @@ function [out] = ChemControl_mod13_modSim(parameters, subj)
 
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
+
+            mu = mu + alpha_lr * (o - mu);
+
             actions(b, t) = a;
             outcomes(b, t) = o;
 
             v_pe = o - sv(s) + mu;
             if a == 1
+                pe = rho * o - q_g(s);
                 q_pe = o - q_g(s) + mu;
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
                 p_explore = 1 - p1;
             elseif a == 2
+                pe = rho * o - q_ng(s);
+
                 q_pe = o - q_ng(s) + mu;
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
                 p_explore = p1;
@@ -183,15 +188,15 @@ function [out] = ChemControl_mod13_modSim(parameters, subj)
             omegas(b, t) = omega;
             if isHC
                 HCcell{hc, s}(end + 1) = p1;
-                HCpe{hc, s}(end + 1) = v_pe;
+                HCpe{hc, s}(end + 1) = pe;
                 HCarr{hc, s}(end + 1) = arr;
             elseif isLC
                 LCcell{lc, s}(end + 1) = p1;
-                LCpe{lc, s}(end + 1) = v_pe;
+                LCpe{lc, s}(end + 1) = pe;
                 LCarr{lc, s}(end + 1) = arr;
             elseif isYoked
                 YCcell{yc, s}(end + 1) = p1;
-                YCpe{yc, s}(end + 1) = v_pe;
+                YCpe{yc, s}(end + 1) = pe;
                 YCarr{yc, s}(end + 1) = arr;
             end   
         end

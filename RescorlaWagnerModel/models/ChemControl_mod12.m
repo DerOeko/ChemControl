@@ -78,10 +78,10 @@ for b = 1:B
         
         % update global reward rate
         %rr=rr+ep*(rho * o - sv(s));
-
+        sigdiff=sigmoid((v_pe_abs-q_pe_abs)*1000);
         % different logics to update Omega: simply tracks the overall frequency of trials
         % where the prediction error of the Pavlovian model is higher than that of the instrumental model
-        omega = omega + (v_pe_abs>q_pe_abs)*(alpha_up*(1-omega)) + (v_pe_abs>q_pe_abs) *(alpha_down*(0-omega));
+        omega = omega + (sigdiff)*(alpha_up*(1-omega)) + (1-sigdiff) *(alpha_down*(0-omega));
         % if v_pe_abs>q_pe_abs
         %     omega = omega + alpha_up*(1 - omega);
         % elseif v_pe_abs<q_pe_abs

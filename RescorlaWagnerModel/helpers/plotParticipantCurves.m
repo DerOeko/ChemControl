@@ -1,20 +1,8 @@
-function figHandle = plotParticipantCurves(participantData, isHC, figHandle)
+function figHandle = plotParticipantCurves(data, figHandle)
     arguments
-        participantData;
-        isHC = true;
+        data;
         figHandle = [];
     end
-    if ~isHC
-        % Define the function that will adjust LC state values
-        adjustLCState = @(x) setfield(x, 'LCdata', ...
-            setfield(x.LCdata, 'state', x.LCdata.state - 4));
-        
-        participantData = structfun(adjustLCState, participantData, 'UniformOutput', false);
-    end
-
-
-    controlString = fi(isHC, "High Control", "Low Control");
-    run("config.m")
     
     if isempty(figHandle)
         figHandle = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
@@ -22,56 +10,60 @@ function figHandle = plotParticipantCurves(participantData, isHC, figHandle)
         figure(figHandle);
     end
     
-    participants = fieldnames(participantData);
-    numStates = 4;
-    proportionGoResponses = zeros(numStates, 10, numel(participants));
-    
-    for i = 1:numel(participants)
-        sub = string(participants(i));
-        if isHC
-            d = participantData.(sub).HCdata;
-        elseif ~isHC
-            d = participantData.(sub).LCdata;
-        else
-            disp("Specify HC flag");
-        end
+    nStates = 4;
+    nSubs = numel(data);
+    nOccurrences = 10; % each state occurs 10 times per block
+    nBlocks = size(data{1}.stimuli, 1);
 
-        for s = 1:numStates
-                stateData = d(d.state == s, :);
-                uniqueMiniblocks = unique(stateData.miniBlock);
-                numMiniblocks = numel(uniqueMiniblocks);
-                for m = 1:numMiniblocks
-                    miniBlockData = stateData(stateData.miniBlock == uniqueMiniblocks(m, 1), :);
-                    d.stateOccurrence(d.state == s & d.miniBlock == uniqueMiniblocks(m, 1)) = (1:10)';
-                end
-    
-                for occ = 1:10
-                    proportionGoResponses(s, occ, i) = size(d(d.state == s & d.action & d.stateOccurrence == occ, :), 1)/numMiniblocks;
-                end
-        end
-        if isHC
-            participantData.(sub).HCdata = d;
-        elseif ~isHC
-            participantData.(sub).LCdata = d;
+    % Initialize the array to store "go" responses
+    % Dimensions: States x Occurrences x Blocks x Subjects
+    allResponses = NaN(nStates, nOccurrences, nBlocks, nSubs);
+    for iSub = 1:nSubs
+        d = data{iSub};
+        for iBlock = 1:nBlocks
+            for iState = 1:nStates
+                sIdx = find(d.stimuli(iBlock, 1:40) == iState);
+                actions = d.actions(iBlock, sIdx) == 1;
+                allResponses(iState, 1:length(actions), iBlock, iSub) = actions;
+            end
         end
     end
+
+    % Mean across blocks, results in a States x Occurrences x Subjects array
+    meanBlocks = squeeze(nanmean(allResponses, 3));
     
-    averageProportionGoResponses = mean(proportionGoResponses, 3);
-    T = 40;
-    
-    hold on; % Allows multiple plots on the same figure
-    for state = 1:4
-        plot(1:T/4, averageProportionGoResponses(state, :)', 'LineWidth', 2); % Plotting mean probabilities for each state
+    % Mean across subjects, results in a States x Occurrences array
+    meanSubjects = squeeze(nanmean(meanBlocks, 3));
+
+    % Standard error of the mean (SEM) across subjects
+    semSubjects = squeeze(nanstd(meanBlocks, [], 3) ./ sqrt(nSubs));
+
+    hold on;
+    colors = lines(nStates); % Get distinct colors for each state
+    for state = 1:nStates
+        x = 1:nOccurrences;
+        y = meanSubjects(state, :);
+        sem = semSubjects(state, :);
+
+        % Confidence bounds
+        xconf = [x, x(end:-1:1)];
+        yconf = [y + sem, y(end:-1:1) - sem(end:-1:1)];
+        
+        % Plot confidence bounds
+        p = fill(xconf, yconf, colors(state, :), 'FaceAlpha', 0.2, 'EdgeColor', 'none');
+        
+        % Plot mean line
+        plot(x, y, 'LineWidth', 2, 'Color', colors(state, :));
     end
+    
     xlabel('State Repetitions');
-    xlim([1.0 T/4])
+    xlim([1, nOccurrences]);
     ylabel('P(Go response | state)');
-    ylim([0.0, 1.0])
-    yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE')
-    legend('Go to Win', 'Go to Avoid Loss', 'NoGo to Win', 'NoGo to Avoid Loss', 'Location', 'best');
-    title_str = sprintf("Participant Data: \nMean P(Go|State) Across State Repetitions in\n%s Trials with N = %i", controlString, numel(participants));
-    title(title_str);
-    grid on
+    ylim([0.0, 1.0]);
+    yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE');
+    legend('', 'G2W', '', 'G2A', '', 'NG2W', '', 'NG2A', 'Location', 'best');
+
+    grid on;
     
     hold off;
 end

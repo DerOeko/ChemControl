@@ -35,7 +35,7 @@ data = load(inputFile).data;
 fprintf('Loaded inputFile with %d subjects\n', size(data, 2));
 
 nMod = length(dir(fullfile(dirs.models, "*.m")));
-
+dataType = 'allData';
 %% 01) LOAD AND SAVE:
 %% 01a) Alternative A: Load model fitted with LAP:
 
@@ -44,7 +44,7 @@ selMod = 1;
 fname_mod = cell(nMod, 1);
 
 for iMod = 1:nMod
-    fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d.mat', iMod));
+    fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', iMod, dataType));
 end
 
 fprintf("Load model %d fit with LAP\n", selMod);
@@ -61,7 +61,7 @@ parType = 'hbi';
 % extract
 for iMod = 1:nMod
     % load
-    fname_hbi       = fullfile(dirs.hbi, sprintf('hbi_mod_%02d.mat', iMod));
+    fname_hbi       = fullfile(dirs.hbi, sprintf('hbi_mod_%02d_%s.mat', iMod, dataType));
     fprintf("Load model %d fit with HBI\n", iMod);
     load(fname_hbi)
     fprintf("Extract model %d fit with HBI\n", iMod);
@@ -74,7 +74,7 @@ end
 %% 02) SIMULATE
 %% 02a) Run settings
 
-nRuns = 100;
+nRuns = 50;
 nTrials = 80;
 nBlocks = 16;
 nStates = 4;
@@ -340,15 +340,15 @@ for iMod = 1:nMod
     YCarr_mean = mean(YCarr_mean, 3);
 
     figure(fig1);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotLearningCurves(HCmeans, sprintf("M%02d", iMod), fig1);
     
     figure(fig2);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotLearningCurves(LCmeans, sprintf("M%02d", iMod), fig2);
     
     figure(fig3)
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotLearningCurves(YCmeans, sprintf("M%02d", iMod), fig3);
 
     shiftMeans_HC = squeeze(mean(shiftMeans_HC, 1));
@@ -356,39 +356,39 @@ for iMod = 1:nMod
     shiftMeans_YC = squeeze(mean(shiftMeans_YC, 1));
 
     figure(fig4);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotShiftLoss(shiftMeans_HC, iMod, fig4);
 
     figure(fig5);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotShiftLoss(shiftMeans_LC, iMod, fig5);
 
     figure(fig6);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotShiftLoss(shiftMeans_YC, iMod, fig6);
 
     figure(fig7);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotPredictionErrors(HCpes_mean, iMod, fig7);
 
     figure(fig8);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotPredictionErrors(LCpes_mean, iMod, fig8);
 
     figure(fig9);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotPredictionErrors(YCpes_mean, iMod, fig9);
 
     figure(fig11);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotAverageRewardRate(HCarr_mean, sprintf("M%02d", iMod), fig11);
     
     figure(fig12);
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotAverageRewardRate(LCarr_mean, sprintf("M%02d", iMod), fig12);
     
     figure(fig13)
-    subplot(3, ceil(nMod/2), iMod);
+    subplot(3, ceil(nMod/3), iMod);
     plotAverageRewardRate(YCarr_mean, sprintf("M%02d", iMod), fig13);
 end
 

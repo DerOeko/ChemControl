@@ -82,14 +82,14 @@ for iSub = 1:nSub
     optsCal.DataLines = [44, 83]; % Lines 44 to 83
     optsCal.Delimiter = ","; % CSV delimiter
     optsCal.MissingRule = "fill"; % Fill missing data
-    optsCal.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_respCalibrate_keys"];
+    optsCal.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_respCalibrate_keys", "Yoked"];
     
     % Define options for reading main data (rows 85 to Inf)
     optsMain = detectImportOptions(filePath);
     optsMain.DataLines = [85, Inf]; % Start reading from line 85
     optsMain.Delimiter = ","; % CSV delimiter
     optsMain.MissingRule = "omitrow"; % Omit rows with missing data
-    optsMain.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_resp_keys"];
+    optsMain.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_resp_keys", "Yoked"];
     
     % Try to load the calibration data
     try
@@ -101,9 +101,10 @@ for iSub = 1:nSub
     
     % Fill missing data in calibrationData
     calibrationData.randLC(:) = 2;
+    calibrationData.Yoked(:) = 0;
 
     % Rename variable names
-    calibrationData = renamevars(calibrationData, ["trialType", "key_respCalibrate_keys", "feedback"], ["stimuli", "actions", "outcomes"]);
+    calibrationData = renamevars(calibrationData, ["trialType", "key_respCalibrate_keys", "feedback", "Yoked"], ["stimuli", "actions", "outcomes", "isYoked"]);
 
     % Try to load the main data
     try
@@ -113,7 +114,7 @@ for iSub = 1:nSub
         mainData = table(); % Create an empty table if an error occurs
     end
 
-    mainData = renamevars(mainData, ["trialType", "key_resp_keys", "feedback"], ["stimuli", "actions", "outcomes"]);
+    mainData = renamevars(mainData, ["trialType", "key_resp_keys", "feedback", "Yoked"], ["stimuli", "actions", "outcomes", "isYoked"]);
 
     % Combine calibration data and main data
     data = [calibrationData; mainData];
@@ -125,7 +126,8 @@ for iSub = 1:nSub
     data.randHC = int8(data.randHC);
     data.randLC = int8(data.randLC);
     data.randomReward = data.randomReward == 1;
-    
+    data.isYoked = logical(data.isYoked);
+
     % Convert actions from cell array of strings to a string array if necessary
     data.actions = string(data.actions);
     

@@ -90,15 +90,15 @@ fprintf("Selected model is no. %02d\n", selMod)
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
-%% 01) LOAD AND SAVE:
-%% 01a) Alternative A: Load model fitted with LAP:
+%% 01) LOAD AND SAVE ALL DATA:
+% 01a) Alternative A: Load model fitted with LAP:
 
 parType = 'lap';
-
+dataType = 'allData';
 fname_mod = cell(nMod, 1);
 
 for iMod = 1:nMod
-    fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d.mat', iMod));
+    fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', iMod, dataType));
 end
 
 fprintf("Load model %d fit with LAP\n", selMod);
@@ -109,12 +109,12 @@ nSub        = size(subParam, 1);
 nParam      = size(subParam, 2);
 
 % ----------------------------------------------------------------------- %
-%% 01b) Alternative B: Load model fitted with HBI:
+% 01b) Alternative B: Load model fitted with HBI:
 
 parType = 'hbi';
 
 % load
-fname_hbi       = fullfile(dirs.hbi, sprintf('hbi_mod_%02d.mat', selMod));
+fname_hbi       = fullfile(dirs.hbi, sprintf('hbi_mod_%02d_%s.mat', selMod, dataType));
 fprintf("Load model %d fit with HBI\n", selMod);
 load(fname_hbi)
 
@@ -128,7 +128,7 @@ nParam          = size(subParam, 2);
 
 
 % ----------------------------------------------------------------------- %
-%% 01c) Transform group and subject parameters appropriately:
+% 01c) Transform group and subject parameters appropriately:
 % Define sigmoid function
 sigmoid = @(x) 1 ./ (1 + exp(-x));
 
@@ -142,18 +142,18 @@ for iParam = 1:nParam
 end
 
 % ----------------------------------------------------------------------- %
-%% 01d) Save (either LAP or HBI):
+% 01d) Save (either LAP or HBI):
 
 fprintf('Save transformed group and subject level parameters under %s, model %02d\n', ...
     parType, selMod);
 
-fileName = fullfile(eval(sprintf('dirs.%s', parType)), sprintf('CBM_%s_M%02d_groupParameters.csv', ...
-    parType, selMod));
+fileName = fullfile(eval(sprintf('dirs.%s', parType)), sprintf('CBM_%s_M%02d_%s_groupParameters.csv', ...
+    parType, selMod, dataType));
 
 csvwrite(fileName, groupParam);
 
-fileName = fullfile(eval(sprintf('dirs.%s', parType)), sprintf('CBM_%s_M%02d_subjectParameters.csv', ...
-    parType, selMod));
+fileName = fullfile(eval(sprintf('dirs.%s', parType)), sprintf('CBM_%s_M%02d_%s_subjectParameters.csv', ...
+    parType, selMod, dataType));
 
 csvwrite(fileName, subParam);
 
@@ -161,8 +161,8 @@ csvwrite(fileName, subParam);
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
-%% 02) GROUP-LEVEL PARAMETERS.
-%% 02a) Mean per proup level parameter:
+% 01) GROUP-LEVEL PARAMETERS.
+% Mean per proup level parameter:
 
 fprintf('\nGroup-level parameters for model %d:\n', selMod);
 
@@ -176,8 +176,8 @@ end
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
-%% 03) SUBJECT-LEVEL PARAMETERS.
-%% 03a) Mean, SD, range per subject-level parameter:
+% 01) SUBJECT-LEVEL PARAMETERS.
+% Mean, SD, range per subject-level parameter:
 
 fprintf('\nSubject-level parameters for model %d\n', selMod);
 for iParam = 1:size(subParam, 2)
@@ -187,7 +187,7 @@ for iParam = 1:size(subParam, 2)
 end
 
 % ----------------------------------------------------------------------- %
-%% 03b) Find extreme values:
+% 01) Find extreme values:
 
 fprintf('Find subjects with extreme values for model %d\n', selMod);
 for iParam = 1:size(subParam, 2)
@@ -201,7 +201,7 @@ for iParam = 1:size(subParam, 2)
 end
 
 % ----------------------------------------------------------------------- %
-%% 03c) Sign of parameter:
+% 01) Sign of parameter:
 
 fprintf('Determine percentage negative parameters for model %d\n', selMod);
 for iParam = 1:size(subParam, 2)
@@ -215,8 +215,8 @@ end
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
-%% 04) PLOTS.
-%% 04a) Plot parameters with cbm function:
+% 01) PLOTS.
+% Plot parameters with cbm function:
 % Parameter names:
 param_names{1} = {'\epsilon', '\rho'}; % Model
 transform{1} = {'sigmoid', 'exp'};
@@ -258,95 +258,125 @@ param_names{13} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omeg
 transform{13} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
 
 % Model names:
-model_names = {'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M11', 'M12', 'M13'};
+model_names = {'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M11', 'M12', 'M13', 'M14', 'M15'};
 % Create output name:
 modVec = 1:nMod;
-fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s.mat', num2str(modVec, '_%02d')));
+fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s.mat', num2str(modVec, '_%02d'), dataType));
 d = load(fname_hbi);
 c = d.cbm;
 freq = c.output.model_frequency;
 [~, k] = max(freq);
 
-cbm_hbi_plot(fname_hbi, model_names, param_names{k}, transform{k});
+%cbm_hbi_plot(fname_hbi, model_names, param_names{k}, transform{k});
 
-% ----------------------------------------------------------------------- %
-%% 04b) Density plots of single parameters:
+%%
+control_types = {'allData', 'hc', 'lc'};
+parTypes = {'hbi'};
 
-f_hbi   = load(fname_hbi);
-cbm     = f_hbi.cbm;
-selMod    = 5; % specify model to look at
-% Click through densityplots of each parameter:
-for iParam = 1:size(cbm.output.parameters{selMod}, 2) % iParam = 2
-    x = cbm.output.parameters{selMod}(:, iParam);
-    ksdensity(x); hold on
-    plot(x, 0.1 + randn(length(x), 1)/50, 'b.');
-    title(sprintf('Model %02d: Parameter %d', selMod, iParam));
-    w = waitforbuttonpress;
-    close gcf
+
+for ctype = control_types
+    ctype = ctype{1}; % Extract string from cell
+    
+    for parType = parTypes
+        parType = parType{1}; % Extract string from cell
+
+        % Load model fitted with LAP or HBI
+        if strcmp(parType, 'lap')
+            fname_mod = cell(nMod, 1);
+            for iMod = 1:nMod
+                fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', iMod, ctype));
+            end
+
+            fprintf("Load model %d fit with LAP (%s)\n", selMod, ctype);
+            fname = load(fname_mod{selMod});
+            cbm = fname.cbm;
+            subParam = cbm.output.parameters;
+            nSub = size(subParam, 1);
+            nParam = size(subParam, 2);
+        else
+            fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod_%02d_%s.mat', selMod, ctype));
+            fprintf("Load model %d fit with HBI (%s)\n", selMod, ctype);
+            load(fname_hbi)
+
+            fprintf("Extract model %d fit with HBI (%s)\n", selMod, ctype);
+            groupParam = cbm.output.group_mean{:};
+            subParam = cbm.output.parameters{:};
+            nSub = size(subParam, 1);
+            nParam = size(subParam, 2);
+        end
+
+        % Transform group and subject parameters appropriately
+        sigmoid = @(x) 1 ./ (1 + exp(-x));
+
+        fprintf('Transform parameters of model %d (%s)\n', selMod, ctype);
+        for iParam = 1:nParam
+            transformFunc = transform{selMod}{iParam};
+            if ischar(transformFunc)
+                transformFunc = str2func(transformFunc);
+            end
+            groupParam(iParam) = transformFunc(groupParam(iParam));
+            subParam(:, iParam) = transformFunc(subParam(:, iParam));
+        end
+
+        % Save transformed group and subject level parameters
+        fprintf('Save transformed group and subject level parameters under %s, model %02d (%s)\n', ...
+            parType, selMod, ctype);
+
+        fileName = fullfile(eval(sprintf('dirs.%s', parType)), sprintf('CBM_%s_M%02d_%s_groupParameters.csv', ...
+            parType, selMod, ctype));
+        csvwrite(fileName, groupParam);
+
+        fileName = fullfile(eval(sprintf('dirs.%s', parType)), sprintf('CBM_%s_M%02d_%s_subjectParameters.csv', ...
+            parType, selMod, ctype));
+        csvwrite(fileName, subParam);
+
+        % Group-level parameters
+        fprintf('\nGroup-level parameters for model %d (%s):\n', selMod, ctype);
+        for iParam = 1:size(groupParam, 2)
+            x = groupParam(:, iParam);
+            fprintf('Parameter %d: M = %.02f\n', iParam, mean(x));
+        end
+
+        % Subject-level parameters
+        fprintf('\nSubject-level parameters for model %d (%s):\n', selMod, ctype);
+        for iParam = 1:size(subParam, 2)
+            x = subParam(:, iParam);
+            fprintf('Parameter %d: M = %.03f, SD = %.03f, range %.03f - %.03f \n', ...
+                iParam, mean(x), std(x), min(x), max(x));
+        end
+
+        % Find extreme values
+        fprintf('Find subjects with extreme values for model %d (%s):\n', selMod, ctype);
+        for iParam = 1:size(subParam, 2)
+            x = subParam(:, iParam);
+            xmin = min(x);
+            xminidx = find(x == xmin);
+            xmax = max(x);
+            xmaxidx = find(x == xmax);
+            fprintf('Parameter %d: min = %.05f for subjects %s, max = %.02f for subjects %s \n', ...
+                iParam, xmin, num2str(xminidx), xmax, num2str(xmaxidx));
+        end
+
+        % Sign of parameter
+        fprintf('Determine percentage negative parameters for model %d (%s):\n', selMod, ctype);
+        for iParam = 1:size(subParam, 2)
+            x = subParam(:, iParam);
+            xNeg = sum(x < 0); % how many negative
+            xIdx = find(x < 0)'; % who negative
+            fprintf('Parameter %d: negative for %d subjects: %s \n', ...
+                iParam, xNeg, num2str(xIdx));
+        end
+
+        % Plots
+        % Create output name
+        fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s.mat', num2str(modVec, '_%02d'), ctype));
+        d = load(fname_hbi);
+        c = d.cbm;
+        freq = c.output.model_frequency;
+        [~, k] = max(freq);
+
+        cbm_hbi_plot(fname_hbi, model_names, param_names{k}, transform{k});
+    end
 end
-
-% ----------------------------------------------------------------------- %
-%% 04c) Correlations/ bivariate distributions:
-
-% Select parameters:
-iParam1 = 1; % specify first parameter
-iParam2 = 4; % specify second parameter
-% Retrieve parameter values:
-x       = subParam(:, iParam1);
-y       = subParam(:, iParam2);
-p       = polyfit(x', y', 1);
-yhat    = polyval(p, x);
-
-% Plot:
-plot(x, y, 'b.'); hold on;
-plot(x, yhat, 'r-');
-axis([min(x) max(x) min(y) max(y)]);
-
-% Print correlation to console:
-corVal  = corr(x, y);
-fprintf('Model %02d: Parameters %d and %d, cor = %0.2f\n', ...
-    selMod, iParam1, iParam2, corVal);
-title(sprintf('Model %02d: Parameters %d and %d, cor = %0.2f', ...
-    selMod, iParam1, iParam2, corVal));
-
-% ----------------------------------------------------------------------- %
-%% 04d) Bar plots with dots:
-
-% Settings:
-paramNames  = {{'$\rho$', '$\epsilon$'},...
-    {'$\rho$', '$\epsilon$', '{\it Go}'},...
-    {'$\rho$', '$\epsilon$', '{\it Go}', '$\pi$'},...
-    {'$\rho$', '$\epsilon$', '{\it Go}', '$\kappa$'},...
-    {'$\rho$', '$\epsilon$', '{\it Go}', '$\pi$', '$\kappa$'}};
-ScatterMatrix = subParam';
-colMat = [0 0 1; 1 0 0; 0 01 0; 0 1 1; 1 0 1;1 0 0; 1 0 0]; % color
-posMat = 1:1:(0.5 + nParam);
-
-% Make figure:
-addpath(fullfile(dirs.root, '/Analyses/Behavior_Scripts/Matlab_Plots/')); % add function barScatter
-figure('units', 'normalized', 'outerposition', [0 0 1 1]); hold on
-barScatter(ScatterMatrix, [], [], true, true, colMat, posMat);
-
-% Add plot features:
-set(gca, 'xlim', [0 (nParam+1)], 'ylim', [-5 5],...
-    'xtick', 1:nParam, 'xticklabel', paramNames{selMod},...
-    'FontSize', 32, 'FontName', 'Arial', 'Linewidth', 4, 'TickLabelInterpreter', 'latex');
-xlabel('Parameter', 'FontSize',32, 'FontName', 'Arial');
-ylabel('Parameter estimates', 'FontSize',32, 'FontName', 'Arial');
-box off; hold off
-
-% Print to console:
-fprintf('Model %02d:\n', selMod)
-for ii = 1:size(ScatterMatrix, 1)
-    paramVec = ScatterMatrix(ii, :);
-    fprintf('Parameter %02d: M = %.02f, SD = %.02f, range %.02f - %.02f\n', ...
-        ii, nanmean(paramVec), nanstd(paramVec), min(paramVec), max(paramVec));
-end
-
-% Save:
-saveas(gcf, fullfile(dirs.root, sprintf('/Log/OutcomeLockedPaperPlots/Parameters_%s_mod%02d.png', ...
-    parType, selMod)));
-pause(2)
-close gcf
 
 % END OF FILE.
