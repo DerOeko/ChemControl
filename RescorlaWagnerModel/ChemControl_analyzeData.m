@@ -133,6 +133,140 @@ sgtitle(sprintf("Learning Curves for Specific Transition Types for Different Dat
 
 plotTransitions(transitionData, fig5);
 
+%% Average reward rate with running windows
 
+windowSize = 7;
+ctypes = {"all", "hc", "lc", "yc"};
+for ctype = ctypes
+    ctype = ctype{1};
 
+    if strcmp(ctype, "all")
+        currentData = data;
+    elseif strcmp(ctype, "hc")
+        currentData = hc_d;
+    elseif strcmp(ctype, "lc")
+        currentData = lc_d;
+    elseif strcmp(ctype, "yc")
+        currentData = yc_d;
+    end
+    nBlocks = size(currentData{1}.outcomes, 1);
+    nTrials = size(currentData{1}.outcomes, 2);
 
+    allAverageRewardRates = zeros(nBlocks, nTrials - windowSize, nSub);
+
+    for iSub = 1:nSub
+        subj = currentData{iSub};
+        outcomes = subj.outcomes;
+        outcomes = transformOutcomes(outcomes, subj.stimuli);
+        for iBlock = 1:nBlocks
+            for iTrial = windowSize + 1:nTrials
+                window = outcomes(iBlock, iTrial-windowSize:iTrial);
+                allAverageRewardRates(iBlock, iTrial - windowSize, iSub) = mean(window);
+            end
+        end
+    end
+    
+    meanAverageRewardRate = mean(allAverageRewardRates, 3);
+    meanAverageRewardRate = mean(meanAverageRewardRate, 1);  % Mean across blocks
+
+    % Plotting for each control type
+    figure;
+    plot(meanAverageRewardRate);
+    title(['Average Reward Rate - ', ctype]);
+    xlabel('Trial (adjusted for window size)');
+    ylabel('Average Reward Rate');
+end
+
+%% Average reward rate across transitions with sliding window
+
+transitionArr = struct();
+
+% Initialize each transition type in the structure
+for i = 1:numel(transitions)
+    transitionArr.(transitions{i}).stimuli = [];
+    transitionArr.(transitions{i}).outcomes = [];
+end
+
+% Loop over subjects
+for iSub = 1:nSub
+    subj = data{iSub};
+    schedule = subj.controllability(:, 1) + 2 * subj.isYoked(:, 1);
+    nBlocks = numel(schedule);
+
+    for iBlock = 1:(nBlocks - 1)
+        % Convert transition to a string key
+        transition = sprintf('%d%d', schedule(iBlock), schedule(iBlock + 1));
+        key = '';
+
+        switch transition
+            case '11'
+                key = 'hchc';
+            case '10'
+                key = 'hclc';
+            case '12'
+                key = 'hcyc';
+            case '00'
+                key = 'lclc';
+            case '01'
+                key = 'lchc';
+            case '02'
+                key = 'lcyc';
+            case '22'
+                key = 'ycyc';
+            case '20'
+                key = 'yclc';
+            case '21'
+                key = 'ychc';
+            otherwise
+                continue;
+        end
+
+        if isempty(key)
+            continue;
+        end
+
+        % Define indices for window around the transition
+        endIdx = size(subj.stimuli, 2);  % Number of trials in each block
+        preStart = max(1, endIdx - windowSize*2 + 1);
+        postEnd = min(endIdx, windowSize*2);
+
+        % Collect data from the end of the current block and the beginning of the next block
+        if iBlock < nBlocks
+            stimuliWindow = [subj.stimuli(iBlock, preStart:end), subj.stimuli(iBlock + 1, 1:postEnd)];
+            outcomesWindow = [subj.outcomes(iBlock, preStart:end), subj.outcomes(iBlock + 1, 1:postEnd)];
+            transitionArr.(key).stimuli = [transitionArr.(key).stimuli; stimuliWindow];
+            transitionArr.(key).outcomes = [transitionArr.(key).outcomes; outcomesWindow];
+        end
+    end
+end
+
+transitions = fieldnames(transitionArr);
+
+for idx = 1:numel(transitions)
+    transition = transitions{idx};
+    disp(transition)
+    transitionOutcomes = transitionArr.(transition).outcomes;
+    transitionStimuli = transitionArr.(transition).stimuli;
+    
+    transitionOutcomes = transformOutcomes(transitionOutcomes, transitionStimuli);
+
+    nTransitions = size(transitionStimuli, 1);
+    nTrialsTransition = size(transitionStimuli, 2);
+
+    allTransitionArrs = zeros(nTransitions, nTrialsTransition - windowSize);
+    for iTransition = 1:nTransitions
+        for iTrial = windowSize + 1:nTrialsTransition
+            window = transitionOutcomes(iTransition, iTrial-windowSize:iTrial);
+            allTransitionArrs(iTransition, iTrial - windowSize) = mean(window);
+        end
+    end
+    
+    meanTransitionArr = mean(allTransitionArrs, 1);
+
+    % Plotting the average reward rate for each transition type
+    figure;
+    plot(meanTransitionArr);
+    title(['Average Reward Rate for ', transition, ' Transition']);
+    xlabel('Trials (adjusted for window size)');
+    ylabel('Average Reward Rate');
+end

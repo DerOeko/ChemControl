@@ -85,6 +85,12 @@ priors{12} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 3 3]); % prior_mode
 priors{13} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
 priors{14} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
 priors{15} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{16} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{17} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
+priors{18} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
+priors{19} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
+priors{20} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
+priors{21} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
 
 % Output names:
 fprintf("Initialize output file names\n")
@@ -121,7 +127,7 @@ end
 % 2.1 extracting high and low control data
 hc_d = cell(1, nSub);
 lc_d = cell(1, nSub);
-nBlocks = size(data{1}.controllability, 1);
+nBlocks = size(allData_d{1}.controllability, 1);
 
 for iSub = 1:nSub
     d = allData_d{iSub};
