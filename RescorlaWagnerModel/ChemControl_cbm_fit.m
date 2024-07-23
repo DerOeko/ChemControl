@@ -45,8 +45,9 @@ if ~exist(dirs.stan_models, 'dir'); mkdir(dirs.stan_models); end
 % ----------------------------------------------------------------------- %
 %% 00b) Settings:
 nMod = length(dir(fullfile(dirs.models, "*.m")));
-
-fprintf('Fit %d models\n', nMod);
+selMods = 1:nMod;
+selMods = [1:5 11 12 16 22];
+fprintf('Fit %d models\n', length(selMods));
 
 % ----------------------------------------------------------------------- %
 %% 00c) Paths:
@@ -91,12 +92,13 @@ priors{18} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_
 priors{19} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
 priors{20} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
 priors{21} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
+priors{22} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 3]); % prior_model_dynamicOmega2
 
 % Output names:
 fprintf("Initialize output file names\n")
 
-fname_mod = cell(nMod, 1);
-for iMod = 1:nMod
+fname_mod = cell(length(selMods), 1);
+for iMod = selMods
     fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d.mat', iMod));
 end
 
@@ -108,16 +110,16 @@ subj1 = allData_d{1};
 
 fprintf(">>>>>  Test with random values\n")
 % a) Random parameter values:
-for iMod = 1:nMod
-    parameters = randn(1, 7);
+for iMod = selMods
+    parameters = randn(1, 8);
     F1 = eval(sprintf('ChemControl_mod%d(parameters, subj1)', iMod));
     fprintf('Model %02d: loglik = %f\n', iMod, F1);
 end
 
 fprintf(">>>>>  Test with extreme values\n")
 % b) Extreme parameter values:
-for iMod = 1:nMod
-    parameters = [-10 10 -10 10 10 10 10];
+for iMod = selMods
+    parameters = [-10 10 -10 10 10 10 10 10];
     F1 = eval(sprintf('ChemControl_mod%d(parameters, subj1)', iMod));
     fprintf('Model %02d: loglik = %f\n', iMod, F1);
 end
@@ -165,7 +167,7 @@ for ctype = control_types
 
     % Step 1: Fit Laplace Approximation
     fprintf('Fitting Laplace Approximation for %s data\n', ctype);
-    for iMod = 1:nMod
+    for iMod = selMods
         outputFileName = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', iMod, ctype));
         
         % Check if the model has already been fitted:
@@ -195,9 +197,9 @@ for ctype = control_types
     % Step 2: Evaluate LAP Fit
     fprintf('Evaluating LAP fit for %s data\n', ctype);
     % Initialize output file names
-    fname_mod = cell(nMod, 1);
-    logModEvi = nan(nSub, nMod);
-    for iMod = 1:nMod
+    fname_mod = cell(length(selMods), 1);
+    logModEvi = nan(nSub, length(selMods));
+    for iMod = selMods
         fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', iMod, ctype));
         fname = load(fname_mod{iMod});
         cbm = fname.cbm;
@@ -215,7 +217,7 @@ for ctype = control_types
     % Plot log model-evidence per subject
     figure('unit', 'normalized', 'outerposition', [0 0 1 1]); hold on
     legendVec = [];
-    for iMod = 1:nMod
+    for iMod = selMods
         plot(1:nSub, logModEvi(:, iMod), 'LineWidth', 2, 'DisplayName', sprintf('Model %02d', iMod));
         legendVec = [legendVec; sprintf('Model %02d', iMod)];
     end
@@ -223,8 +225,8 @@ for ctype = control_types
     legend(legendVec);
 
     % t-test between 2 models
-    for iMod1 = 1:nMod
-        for iMod2 = 1:nMod
+    for iMod1 = selMods
+        for iMod2 = selMods
             if iMod1 ~= iMod2
                 fprintf('Test log model-evidence of models %d and %d against each other for %s: \n', iMod1, iMod2, ctype);
                 [~, p, ~, STATS] = ttest(logModEvi(:, iMod1), logModEvi(:, iMod2));
@@ -234,7 +236,7 @@ for ctype = control_types
     end
 
     % Model frequency
-    modRange = 1:nMod;
+    modRange = selMods;
     modFreq = nan(nSub, 1);
     for iSub = 1:nSub
         [~, I] = max(logModEvi(iSub, modRange));
@@ -245,12 +247,12 @@ for ctype = control_types
     fprintf('Model frequency per model for %s: \n', ctype);
     for iMod = modRange
         idx = find(modFreq == iMod);
-        fprintf('Model M%02d is best for %02d subjects: %s\n', modRange(iMod), length(idx), mat2str(idx));
+        fprintf('Model M%02d is best for %02d subjects: %s\n', iMod, length(idx), mat2str(idx));
     end
 
     % Step 3: Fit Hierarchical Bayesian Inference (HBI) for Separate Models
     fprintf('Fitting HBI for %s data\n', ctype);
-    for iMod = 1:nMod
+    for iMod = selMods
         fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod_%02d_%s.mat', iMod, ctype));
         
         % Check if the HBI model has already been fitted:
@@ -290,15 +292,16 @@ for ctype = control_types
     fprintf('Prepare HBI for comparing models for %s\n', ctype);
 
     % Create names of input files:
-    models = cell(nMod, 1);
-    fcbm_maps = cell(nMod, 1);
-    for iMod = 1:nMod
-        models{iMod} = eval(sprintf('@ChemControl_mod%d', iMod));
-        fcbm_maps{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', iMod, ctype));
+    models = cell(length(selMods), 1);
+    fcbm_maps = cell(length(selMods), 1);
+    for iMod = 1:length(selMods)
+        selMod = selMods(iMod);
+        models{iMod} = eval(sprintf('@ChemControl_mod%d', selMod));
+        fcbm_maps{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', selMod, ctype));
     end
 
     % File address for saving the output
-    fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s', num2str(1:nMod, '_%02d'), ctype));
+    fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s', num2str(selMods, '_%02d'), ctype));
     fprintf('Output file will be %s\n', fname_hbi);
     fname_hbi = [fname_hbi, '.mat'];
     
@@ -321,13 +324,13 @@ for ctype = control_types
             end
         end
     else
-        fprintf('Fit models %s with HBI for %s\n', num2str(1:nMod, '_%02d'), ctype);
+        fprintf('Fit models %s with HBI for %s\n', num2str(selMods, '_%02d'), ctype);
         cbm_hbi(d, models, fcbm_maps, fname_hbi);
         fprintf("Finished fitting for %s :]\n", ctype);
     end
 
     % Additionally run protected exceedance probability (including null model)
-    fprintf('Re-run models %s with HBI including null model for %s\n', num2str(1:nMod, '_%02d'), ctype);
+    fprintf('Re-run models %s with HBI including null model for %s\n', num2str(selMods, '_%02d'), ctype);
     
     % Check if the HBI null model has already been fitted:
     if exist(fname_hbi, 'file')
@@ -357,7 +360,7 @@ for ctype = control_types
     fprintf('Evaluating HBI fit for %s data\n', ctype);
     
     % Create output name
-    modVec = 1:nMod;
+    modVec = selMods;
     fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s.mat', num2str(modVec, '_%02d'), ctype));
 
     % Load model:
@@ -382,9 +385,9 @@ for ctype = control_types
     tabulate(subResp);
 
     % Per model:
-    for iMod = 1:length(modVec)
+    for iMod = selMods
         idx = find(subResp == iMod);
-        fprintf('Model M%02d is responsible for %02d subjects: %s\n', modVec(iMod), length(idx), mat2str(idx));
+        fprintf('Model M%02d is responsible for %02d subjects: %s\n', iMod, length(idx), mat2str(idx));
     end
 
     % Exceedance probability:
@@ -397,4 +400,18 @@ for ctype = control_types
 end
 % END OF FILE.
 
+modVec = selMods;
+fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s.mat', num2str(modVec, '_%02d'), "allData"));
+f_hbi = load(fname_hbi);
+cbm = f_hbi.cbm;
+nSub = size(cbm.output.parameters{1}, 1);
+responsibility = cbm.output.responsibility;
 
+subResp = nan(nSub, 1);
+for iSub = 1:nSub
+    subMax = max(responsibility(iSub, :));
+    subResp(iSub) = find(responsibility(iSub, :) == subMax);
+end
+tabulate(subResp);
+
+    

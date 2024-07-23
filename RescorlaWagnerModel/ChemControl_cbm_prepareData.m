@@ -82,14 +82,14 @@ for iSub = 1:nSub
     optsCal.DataLines = [44, 83]; % Lines 44 to 83
     optsCal.Delimiter = ","; % CSV delimiter
     optsCal.MissingRule = "fill"; % Fill missing data
-    optsCal.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_respCalibrate_keys", "Yoked"];
+    optsCal.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_respCalibrate_keys", "Yoked", "key_respCalibrate_rt"];
     
     % Define options for reading main data (rows 85 to Inf)
     optsMain = detectImportOptions(filePath);
-    optsMain.DataLines = [85, Inf]; % Start reading from line 85
+    optsMain.DataLines = [85, 404]; % Start reading from line 85
     optsMain.Delimiter = ","; % CSV delimiter
-    optsMain.MissingRule = "omitrow"; % Omit rows with missing data
-    optsMain.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_resp_keys", "Yoked"];
+    optsMain.MissingRule = "fill"; % Omit rows with missing data
+    optsMain.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_resp_keys", "Yoked", "key_resp_rt"];
     
     % Try to load the calibration data
     try
@@ -102,9 +102,10 @@ for iSub = 1:nSub
     % Fill missing data in calibrationData
     calibrationData.randLC(:) = 2;
     calibrationData.Yoked(:) = 0;
+    calibrationData.key_respCalibrate_rt(isnan(calibrationData.key_respCalibrate_rt)) = 0;
 
     % Rename variable names
-    calibrationData = renamevars(calibrationData, ["trialType", "key_respCalibrate_keys", "feedback", "Yoked"], ["stimuli", "actions", "outcomes", "isYoked"]);
+    calibrationData = renamevars(calibrationData, ["trialType", "key_respCalibrate_keys", "feedback", "Yoked", "key_respCalibrate_rt"], ["stimuli", "actions", "outcomes", "isYoked", "responseTime"]);
 
     % Try to load the main data
     try
@@ -114,7 +115,9 @@ for iSub = 1:nSub
         mainData = table(); % Create an empty table if an error occurs
     end
 
-    mainData = renamevars(mainData, ["trialType", "key_resp_keys", "feedback", "Yoked"], ["stimuli", "actions", "outcomes", "isYoked"]);
+    mainData = renamevars(mainData, ["trialType", "key_resp_keys", "feedback", "Yoked","key_resp_rt"], ["stimuli", "actions", "outcomes", "isYoked" , "responseTime"]);
+    % Fill missing response times with 0 for NoGo responses
+    mainData.responseTime(isnan(mainData.responseTime)) = 0;
 
     % Combine calibration data and main data
     data = [calibrationData; mainData];
@@ -159,8 +162,10 @@ for iSub = 1:nSub
     data{iSub}.outcomes = reshape(rawData{iSub}.outcomes, [nTrials, nBlocks])';
     data{iSub}.randHC = reshape(rawData{iSub}.randHC, [nTrials, nBlocks])';
     data{iSub}.randLC = reshape(rawData{iSub}.randLC, [nTrials, nBlocks])';
+    data{iSub}.isYoked = reshape(rawData{iSub}.isYoked, [nTrials, nBlocks])';
     data{iSub}.randomReward = reshape(rawData{iSub}.randomReward, [nTrials, nBlocks])';
     data{iSub}.controllability = reshape(rawData{iSub}.controllability, [nTrials, nBlocks])';
+    data{iSub}.responseTime = reshape(rawData{iSub}.responseTime, [nTrials, nBlocks])';
 end
 
 % ----------------------------------------------------------------------- %

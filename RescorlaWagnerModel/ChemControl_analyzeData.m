@@ -134,11 +134,15 @@ sgtitle(sprintf("Learning Curves for Specific Transition Types for Different Dat
 plotTransitions(transitionData, fig5);
 
 %% Average reward rate with running windows
-
 windowSize = 7;
+
+fig6 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig6)
+sgtitle(sprintf("Average Reward Rate for %i Subs, with window size of %i", nSub, windowSize))
+
 ctypes = {"all", "hc", "lc", "yc"};
-for ctype = ctypes
-    ctype = ctype{1};
+for i = 1:numel(ctypes)
+    ctype = ctypes{i};
 
     if strcmp(ctype, "all")
         currentData = data;
@@ -170,11 +174,14 @@ for ctype = ctypes
     meanAverageRewardRate = mean(meanAverageRewardRate, 1);  % Mean across blocks
 
     % Plotting for each control type
-    figure;
-    plot(meanAverageRewardRate);
+    subplot(2, 2, i)
+    plot(meanAverageRewardRate, 'LineWidth', 2);
     title(['Average Reward Rate - ', ctype]);
     xlabel('Trial (adjusted for window size)');
     ylabel('Average Reward Rate');
+    xlim([1 length(meanAverageRewardRate)])
+    ylim([0.5 0.85]);
+    grid on;
 end
 
 %% Average reward rate across transitions with sliding window
@@ -241,10 +248,12 @@ for iSub = 1:nSub
 end
 
 transitions = fieldnames(transitionArr);
+fig7 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig7)
+sgtitle(sprintf("Average reward rate transitions for %i Subs, with windowSize %i ", nSub, windowSize))
 
 for idx = 1:numel(transitions)
     transition = transitions{idx};
-    disp(transition)
     transitionOutcomes = transitionArr.(transition).outcomes;
     transitionStimuli = transitionArr.(transition).stimuli;
     
@@ -262,11 +271,351 @@ for idx = 1:numel(transitions)
     end
     
     meanTransitionArr = mean(allTransitionArrs, 1);
-
+    subplot(3, 3, idx)
     % Plotting the average reward rate for each transition type
-    figure;
-    plot(meanTransitionArr);
+    plot(meanTransitionArr, 'LineWidth',2);
     title(['Average Reward Rate for ', transition, ' Transition']);
     xlabel('Trials (adjusted for window size)');
     ylabel('Average Reward Rate');
+    xlim([1 length(meanTransitionArr)])
+    ylim([0.5 0.85]);
+    grid on;
+end
+
+%% Accuracy plotting
+accBySub = zeros(nSub, 1);
+
+for iSub = 1:nSub
+    subj = data{iSub};
+
+    actions = subj.actions;
+    states = subj.stimuli;
+    goStates = states <= 2; 
+    noGoStates = states >= 2;
+
+    actions = actions == 1;
+    correctActions = goStates & actions | noGoStates & ~actions;
+    acc = mean(correctActions,'all');
+    accBySub(iSub) = acc;
+end
+fig8 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig8)
+sgtitle("Accuracy by Subject")
+plot(accBySub, 'LineWidth', 2);
+yline(0.5, "LineStyle", "-", "Color", "#808080", 'LineWidth',2)
+ylabel("Accuracy")
+xlabel("Subject")
+grid on;
+
+%% Response time by state
+allHcRts = {};
+allLcRts = {};
+allYcRts = {};
+
+for iSub = 1:nSub
+    subj = data{iSub};
+    schedule = 2 * (~subj.controllability(:, 1) & subj.isYoked(:, 1)) + subj.controllability(:, 1);
+    for iBlock = 1:nBlocks
+        blockGos = subj.actions(iBlock, :) == 1;
+        blockRts = subj.responseTime(iBlock, blockGos);
+        switch schedule(iBlock)
+            case 1
+                allHcRts = vertcat(allHcRts, blockRts);
+            case 0
+                allLcRts = vertcat(allLcRts, blockRts);
+            case 2
+                allYcRts = vertcat(allYcRts, blockRts);
+        end
+    end
+end
+
+
+
+% Calculate mean response times for each condition
+meanHcResponseTime = calculateMeanResponseTime(allHcRts);
+meanLcResponseTime = calculateMeanResponseTime(allLcRts);
+meanYcResponseTime = calculateMeanResponseTime(allYcRts);
+
+% Display the results
+fprintf('Mean HC Response Time: %.4f seconds\n', mean(meanHcResponseTime));
+fprintf('Mean LC Response Time: %.4f seconds\n', mean(meanLcResponseTime));
+fprintf('Mean YC Response Time: %.4f seconds\n', mean(meanYcResponseTime));
+
+% Optional: Plot the results
+figure;
+hold on;
+plot(meanHcResponseTime, 'LineWidth', 2, 'DisplayName', 'High Control');
+plot(meanLcResponseTime, 'LineWidth', 2, 'DisplayName', 'Low Control');
+plot(meanYcResponseTime, 'LineWidth', 2, 'DisplayName', 'Yoked Control');
+xlabel('Trial (up to mean length)');
+ylabel('Response Time (seconds)');
+legend show;
+title('Mean Response Times by Condition');
+grid on;
+hold off;
+
+
+
+
+%% Initialize variables to track exploratory actions
+allHcExploration = [];
+allLcExploration = [];
+allYcExploration = [];
+
+for iSub = 1:nSub
+    subj = data{iSub};
+    schedule = 2 * (~subj.controllability(:, 1) & subj.isYoked(:, 1)) + subj.controllability(:, 1);
+    
+    for iBlock = 1:nBlocks
+        blockActions = subj.actions(iBlock, :);
+        blockOutcomes = subj.outcomes(iBlock, :);
+        blockStimuli = subj.stimuli(iBlock, :);
+        % Determine the optimal action based on previous outcomes
+        optimalActions = zeros(size(blockActions));
+        for t = 2:nTrials
+            % Optimal action is the one that was most frequently rewarded in the past
+            pastOutcomes = blockOutcomes(1:t-1);
+            pastActions = blockActions(1:t-1);
+            pastStimuli = blockStimuli(1:t-1);
+
+            % Calculate the number of rewards for each action considering the stimuli state
+            rewardsAction1 = sum((pastOutcomes == 1 & mod(pastStimuli, 2) == 1 & pastActions == 1) | (pastOutcomes == 0 & mod(pastStimuli, 2) == 0 & pastActions == 1));
+            rewardsAction2 = sum((pastOutcomes == 1 & mod(pastStimuli, 2) == 1 & pastActions == 2) | (pastOutcomes == 0 & mod(pastStimuli, 2) == 0 & pastActions == 2));
+            if rewardsAction1 >= rewardsAction2
+                optimalActions(t) = 1;
+            else
+                optimalActions(t) = 2;
+            end
+        end
+        
+        % Calculate exploratory actions
+        exploratoryActions = blockActions ~= optimalActions;
+        exploratoryRate = mean(exploratoryActions);
+        
+        % Store exploratory rates based on control condition
+        switch schedule(iBlock)
+            case 1
+                allHcExploration = [allHcExploration; exploratoryRate];
+            case 0
+                allLcExploration = [allLcExploration; exploratoryRate];
+            case 2
+                allYcExploration = [allYcExploration; exploratoryRate];
+        end
+    end
+end
+
+% Calculate the average exploration rate per trial
+meanHcExplorationRate = mean(allHcExploration);
+meanLcExplorationRate = mean(allLcExploration);
+meanYcExplorationRate = mean(allYcExploration);
+
+% Calculate the standard error of the mean (SEM) for each condition
+semHcExplorationRate = std(allHcExploration) / sqrt(length(allHcExploration));
+semLcExplorationRate = std(allLcExploration) / sqrt(length(allLcExploration));
+semYcExplorationRate = std(allYcExploration) / sqrt(length(allYcExploration));
+
+% Create a bar plot with error bars
+figure;
+hold on;
+barData = [meanHcExplorationRate, meanLcExplorationRate, meanYcExplorationRate];
+semData = [semHcExplorationRate, semLcExplorationRate, semYcExplorationRate];
+b = bar(barData);
+x = 1:length(barData);
+errorbar(x, barData, semData, 'k', 'linestyle', 'none', 'LineWidth', 1);
+set(gca, 'XTick', x, 'XTickLabel', {'High Control', 'Low Control', 'Yoked Control'});
+ylabel('Mean Exploration Rate');
+title('Exploration Rate by Control Condition');
+
+% Add error bars
+numGroups = size(barData, 2);
+x = 1:numGroups;
+errorbar(x, barData, semData, 'k', 'linestyle', 'none', 'LineWidth', 1);
+
+% Customize the plot
+grid on;
+hold off;
+
+%% Win Stay loose Shift Analysis
+
+%% Initialize variables to track exploratory actions and outcomes for all subjects
+weightedProbShiftAfterLoss_HC_perSubj = {};
+weightedProbShiftAfterLoss_LC_perSubj = {};
+weightedProbShiftAfterLoss_YC_perSubj = {};
+
+for iSub = 1:nSub
+    % Filtering data
+    highControlStimuli = [];
+    lowControlStimuli = [];
+    yokedLowControlStimuli = [];
+    
+    highControlActions = [];
+    lowControlActions = [];
+    yokedLowControlActions = [];
+    
+    highControlOutcomes = [];
+    lowControlOutcomes = [];
+    yokedLowControlOutcomes = [];
+    
+    hc = 0;
+    lc = 0;
+    yc = 0; % Counter for YokedLowControl
+    
+    subj = data{iSub};
+    stimuli = subj.stimuli;
+    actions = subj.actions;
+    outcomes = subj.outcomes;
+    controllabilities = subj.controllability;
+
+    schedule = 2 * (~subj.controllability(:, 1) & subj.isYoked(:, 1)) + subj.controllability(:, 1);
+
+    for b = 1:nBlocks
+        switch schedule(b)
+            case 1
+                hc = hc + 1;
+                highControlStimuli(hc, :) = stimuli(b, :);
+                highControlActions(hc, :) = actions(b, :);
+                highControlOutcomes(hc, :) = outcomes(b, :);
+            case 0
+                lc = lc + 1;
+                lowControlStimuli(lc, :) = stimuli(b, :);
+                lowControlActions(lc, :) = actions(b, :);
+                lowControlOutcomes(lc, :) = outcomes(b, :);
+            case 2
+                yc = yc + 1;
+                yokedLowControlStimuli(yc, :) = stimuli(b, :);
+                yokedLowControlActions(yc, :) = actions(b, :);
+                yokedLowControlOutcomes(yc, :) = outcomes(b, :);
+        end
+    end
+    
+    % Initialize vectors
+    maxWins = nTrials; % Maximum possible wins
+    S = 4; % Number of stimuli
+    
+    % For high control
+    shiftAfterLossCounts_HC = zeros(S, maxWins);
+    totalConsecutiveWinsCounts_HC = zeros(S, maxWins);
+    
+    % For low control
+    shiftAfterLossCounts_LC = zeros(S, maxWins);
+    totalConsecutiveWinsCounts_LC = zeros(S, maxWins);
+    
+    % For yoked low control
+    shiftAfterLossCounts_YC = zeros(S, maxWins);
+    totalConsecutiveWinsCounts_YC = zeros(S, maxWins);
+    
+    % Process each type of control separately
+    for controlType = {'HC', 'LC', 'YC'}
+        ct = controlType{1};
+        
+        switch ct
+            case 'HC'
+                controlStimuli = highControlStimuli;
+                controlActions = highControlActions;
+                controlOutcomes = highControlOutcomes;
+                shiftAfterLossCounts = shiftAfterLossCounts_HC;
+                totalConsecutiveWinsCounts = totalConsecutiveWinsCounts_HC;
+            case 'LC'
+                controlStimuli = lowControlStimuli;
+                controlActions = lowControlActions;
+                controlOutcomes = lowControlOutcomes;
+                shiftAfterLossCounts = shiftAfterLossCounts_LC;
+                totalConsecutiveWinsCounts = totalConsecutiveWinsCounts_LC;
+            case 'YC'
+                controlStimuli = yokedLowControlStimuli;
+                controlActions = yokedLowControlActions;
+                controlOutcomes = yokedLowControlOutcomes;
+                shiftAfterLossCounts = shiftAfterLossCounts_YC;
+                totalConsecutiveWinsCounts = totalConsecutiveWinsCounts_YC;
+        end
+        
+        for iS = 1:S
+            for b = 1:size(controlStimuli, 1)
+                consecutiveWins = 0;
+                for t = 1:nTrials - 1
+                    if controlStimuli(b, t) ~= iS
+                        continue
+                    end
+                    s = controlStimuli(b, t);
+                    o = controlOutcomes(b, t);
+                    isWinState = mod(s, 2);
+                    if (isWinState && o == 1) || (~isWinState && o == 0)
+                        consecutiveWins = consecutiveWins + 1;
+                    else
+                        if consecutiveWins > 0
+                            % Count the total number of consecutive wins
+                            totalConsecutiveWinsCounts(iS, consecutiveWins) = totalConsecutiveWinsCounts(iS, consecutiveWins) + 1;                        
+                            nextStateTrial = find(controlStimuli(b, t+1:end) == iS, 1, 'first') + t;
+                            if ~isempty(nextStateTrial) && controlActions(b, t) ~= controlActions(b, nextStateTrial)
+                                shiftAfterLossCounts(iS, consecutiveWins) = shiftAfterLossCounts(iS, consecutiveWins) + 1;
+                            end
+                        end
+                        consecutiveWins = 0;
+                    end
+                end
+            end
+        end
+        
+        % Calculate probabilities
+        probShiftAfterLoss = shiftAfterLossCounts ./ totalConsecutiveWinsCounts;
+        
+        % Handle division by zero (NaN values)
+        probShiftAfterLoss(isnan(probShiftAfterLoss)) = 0;
+        
+        totalConsecutiveWinsCountsSum = sum(totalConsecutiveWinsCounts, 2);
+        totalConsecutiveWinsCountsSum(totalConsecutiveWinsCountsSum == 0) = eps; % Avoid division by zero
+        weightedProbShiftAfterLoss = probShiftAfterLoss .* totalConsecutiveWinsCounts ./ totalConsecutiveWinsCountsSum;
+        
+        % Store the results in the corresponding arrays
+        switch ct
+            case 'HC'
+                weightedProbShiftAfterLoss_HC_perSubj = vertcat(weightedProbShiftAfterLoss_HC_perSubj, weightedProbShiftAfterLoss);
+            case 'LC'
+                weightedProbShiftAfterLoss_LC_perSubj = vertcat(weightedProbShiftAfterLoss_LC_perSubj, weightedProbShiftAfterLoss);
+            case 'YC'
+                weightedProbShiftAfterLoss_YC_perSubj = vertcat(weightedProbShiftAfterLoss_YC_perSubj, weightedProbShiftAfterLoss);
+        end
+
+        
+    end
+   
+end
+
+weightedProbShiftAfterLoss_HC = mean(vertcat(weightedProbShiftAfterLoss_HC_perSubj{:}), 1);
+weightedProbShiftAfterLoss_LC = mean(vertcat(weightedProbShiftAfterLoss_LC_perSubj{:}), 1);
+weightedProbShiftAfterLoss_YC = mean(vertcat(weightedProbShiftAfterLoss_YC_perSubj{:}), 1);
+
+% Create a matrix with the three arrays for easier plotting
+dataMatrix = [weightedProbShiftAfterLoss_HC; 
+              weightedProbShiftAfterLoss_LC; 
+              weightedProbShiftAfterLoss_YC]';
+
+% Define the labels
+labels = {'High Control', 'Low Control', 'Yoked Control'};
+
+% Create a bar plot
+figure;
+bar(dataMatrix);
+xlabel('Trial');
+ylabel('Weighted Probability of Shift After Loss');
+legend(labels, 'Location', 'Best');
+title('Weighted Probability of Shift After Loss by Control Condition');
+xlim([0, 10]);
+grid on;
+
+
+% Function to calculate the mean response time for a given cell array
+function meanResponseTime = calculateMeanResponseTime(responseTimes)
+    meanSize = floor(mean(cellfun(@length, responseTimes)));
+    responseTimeMatrix = nan(numel(responseTimes), meanSize);
+
+    for i = 1:numel(responseTimes)
+        currentArray = responseTimes{i};
+        if length(currentArray) >= meanSize
+            responseTimeMatrix(i, :) = currentArray(1:meanSize);
+        end
+    end
+
+    % Calculate the mean response time, ignoring NaNs
+    meanResponseTime = nanmean(responseTimeMatrix, 1);
 end

@@ -1,4 +1,4 @@
-function [out] = ChemControl_mod16_modSim(parameters, subj)
+function [out] = ChemControl_mod22_modSim(parameters, subj)
 % Model idea by Samu
 % Controllability arbitration with average reward modulated prediction
 % error signal.
@@ -10,6 +10,7 @@ alpha = sigmoid(parameters(4));
 beta = exp(parameters(5));
 thres = scaledSigmoid(parameters(6));
 alpha_lr = sigmoid(parameters(7));
+omega_init = sigmoid(parameters(8));
 
 stimuli = subj.stimuli;
 controllabilities = subj.controllability; % 1 or 0
@@ -47,14 +48,14 @@ lc = 0;
 yc = 0;
 
 rewardLossCounter = zeros([1, 2]);
-q_g = q0;
-q_ng = q0;
-w_g = q0;
-w_ng = q0;
+q_g = q0 * rho;
+q_ng = q0 * rho;
+w_g = q0 * rho;
+w_ng = q0 * rho;
 sv = q0;
 mu = 0;
 Omega = 0;
-omega = 1/(1+exp(-beta*(-thres)));
+omega = omega_init;
 
 for t = 1:T
     s = cali_stimuli(t);
@@ -111,13 +112,13 @@ for b = 1:B
     lc = lc + isLC;
     yc = yc + isYoked;
 
-    q_g = q0;
-    q_ng = q0;
-    w_g = q0;
-    w_ng = q0;
+    q_g = q0 * rho;
+    q_ng = q0 * rho;
+    w_g = q0 * rho;
+    w_ng = q0 * rho;
     sv = q0;
     Omega = 0;
-    omega = 1/(1+exp(-beta*(-thres)));
+    omega = omega_init;
 
     arr = 0;
     for t = 1:T
@@ -166,7 +167,7 @@ for b = 1:B
         Omega = Omega + alpha * (abs(q_pe) - abs(v_pe) - Omega);
         omega = 1/(1+exp(-beta * (Omega - thres)));
         arr = arr + (o - arr);
-
+        omegas(b, t) = omega;
         if isHC
             HCcell{hc, s}(end + 1) = p1;
             HCpe{hc, s}(end + 1) = pe;

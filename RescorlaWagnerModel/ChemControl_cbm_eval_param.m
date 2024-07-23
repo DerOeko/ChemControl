@@ -33,45 +33,68 @@ addpath('/home/control/samnel/Documents/MATLAB/cbm-master/codes'); % CBM toolbox
 addpath(fullfile(dirs.root, 'behavioral_study', 'scripts', 'matlab_scripts', 'RescorlaWagnerModel', 'models')); % models
 
 % Set transforms and parameter names:
-
 param_names{1} = {'\epsilon', '\rho'}; % Model
-transform{1} = {@sigmoid, @exp};
+transform{1} = {'sigmoid', 'exp'};
 
 param_names{2} = {'\epsilon', '\rho', 'goBias'}; % GoBiasModel
-transform{2} = {@sigmoid, @exp, @(x) x};
+transform{2} = {'sigmoid', 'exp', '@(x) x'};
 
 param_names{3} = {'\epsilon', '\rho', 'goBias', '\pi'}; % FixedPavlovModel
-transform{3} = {@sigmoid, @exp, @(x) x, @(x) x};
+transform{3} = {'sigmoid', 'exp', '@(x) x', '@(x) x'};
 
 param_names{4} = {'\epsilon', '\rho', 'goBias', '\pi'}; % DynamicPavlovModel
-transform{4} = {@sigmoid, @exp, @(x) x, @(x) x};
+transform{4} = {'sigmoid', 'exp', '@(x) x', '@(x) x'};
 
 param_names{5} = {'\epsilon', '\rho', 'goBias', '\omega'}; % FixedOmegaModel
-transform{5} = {@sigmoid, @exp, @(x) x, @sigmoid};
+transform{5} = {'sigmoid', 'exp', '@(x) x', 'sigmoid'};
 
 param_names{6} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
-transform{6} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid, @exp};
+transform{6} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp'};
 
 param_names{7} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
-transform{7} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid};
+transform{7} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
 
 param_names{8} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
-transform{8} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid};
+transform{8} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
 
 param_names{9} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', 'lapse bounds'}; % DynamicOmega2Model
-transform{9} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid, @sigmoid};
+transform{9} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
 
 param_names{10} = {'\epsilon', '\rho', 'goBias','\beta_{\Omega}', '\thres_{\Omega}', 'reward info'}; % DynamicOmega2Model
-transform{10} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid, @(x) x};
+transform{10} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', '@(x) x'};
 
-param_names{11} = {'\epsilon', '\rho', 'goBias'};
-transform{11} = {@sigmoid, @exp, @(x) x};
+param_names{11} = {'\epsilon', '\rho', 'goBias'}; % Model 11
+transform{11} = {'sigmoid', 'exp', '@(x) x'};
 
-param_names{12} = {'\epsilon', '\rho', 'goBias', '\alpha_{up}', '\alpha_{down}'};
-transform{12} = {@sigmoid, @exp, @(x) x, @sigmoid, @sigmoid};
+param_names{12} = {'\epsilon', '\rho', 'goBias', '\alpha_{up}', '\alpha_{down}'}; % Model 12
+transform{12} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid'};
 
 param_names{13} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', '\alpha_{lr}'}; % DynamicOmega2Model
-transform{13} = {@sigmoid, @exp, @(x) x, @sigmoid, @exp, @scaledSigmoid, @sigmoid};
+transform{13} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
+
+param_names{14} = {'\epsilon', '\beta_{softmax}', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', '\alpha_{lr}'}; % DynamicOmega2Model
+transform{14} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
+
+param_names{15} = {'\epsilon', '\beta_{softmax}', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', '\alpha_{lr}'}; % DynamicOmega2Model
+transform{15} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
+
+param_names{16} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', '\alpha_{lr}'}; % DynamicOmega2Model
+transform{16} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
+
+param_names{17} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{17} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
+
+param_names{18} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{18} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
+
+param_names{19} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{19} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
+
+param_names{20} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{20} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
+
+param_names{21} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{21} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
 
 % ----------------------------------------------------------------------- %
 %% 00b) Select model:
@@ -82,7 +105,7 @@ modelFiles = dir(fullfile(dirs.models, '*.m'));
 % Set nMod to the number of .m files
 nMod = length(modelFiles);
 
-selMod = 3;
+selMod = 7;
 
 fprintf("Selected model is no. %02d\n", selMod)
 
@@ -137,6 +160,7 @@ fprintf('Transform parameters of model %d\n', selMod);
 for iParam = 1:nParam
     % Get the transformation function for the current parameter
     transformFunc = transform{selMod}{iParam};
+    transformFunc = str2func(transformFunc);
     groupParam(iParam) = transformFunc(groupParam(iParam));
     subParam(:, iParam) = transformFunc(subParam(:, iParam));
 end
@@ -218,47 +242,9 @@ end
 % 01) PLOTS.
 % Plot parameters with cbm function:
 % Parameter names:
-param_names{1} = {'\epsilon', '\rho'}; % Model
-transform{1} = {'sigmoid', 'exp'};
-
-param_names{2} = {'\epsilon', '\rho', 'goBias'}; % GoBiasModel
-transform{2} = {'sigmoid', 'exp', '@(x) x'};
-
-param_names{3} = {'\epsilon', '\rho', 'goBias', '\pi'}; % FixedPavlovModel
-transform{3} = {'sigmoid', 'exp', '@(x) x', '@(x) x'};
-
-param_names{4} = {'\epsilon', '\rho', 'goBias', '\pi'}; % DynamicPavlovModel
-transform{4} = {'sigmoid', 'exp', '@(x) x', '@(x) x'};
-
-param_names{5} = {'\epsilon', '\rho', 'goBias', '\omega'}; % FixedOmegaModel
-transform{5} = {'sigmoid', 'exp', '@(x) x', 'sigmoid'};
-
-param_names{6} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
-transform{6} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp'};
-
-param_names{7} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
-transform{7} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
-
-param_names{8} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
-transform{8} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
-
-param_names{9} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', 'lapse bounds'}; % DynamicOmega2Model
-transform{9} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
-
-param_names{10} = {'\epsilon', '\rho', 'goBias','\beta_{\Omega}', '\thres_{\Omega}', 'reward info'}; % DynamicOmega2Model
-transform{10} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', '@(x) x'};
-
-param_names{11} = {'\epsilon', '\rho', 'goBias'}; % Model 11
-transform{11} = {'sigmoid', 'exp', '@(x) x'};
-
-param_names{12} = {'\epsilon', '\rho', 'goBias', '\alpha_{up}', '\alpha_{down}'}; % Model 12
-transform{12} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid'};
-
-param_names{13} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', '\alpha_{lr}'}; % DynamicOmega2Model
-transform{13} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid'};
 
 % Model names:
-model_names = {'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M11', 'M12', 'M13', 'M14', 'M15'};
+model_names = {'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M11', 'M12', 'M13', 'M14', 'M15', 'M16', 'M17', 'M18', 'M19', 'M20', 'M21'};
 % Create output name:
 modVec = 1:nMod;
 fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s.mat', num2str(modVec, '_%02d'), dataType));
@@ -311,9 +297,8 @@ for ctype = control_types
         fprintf('Transform parameters of model %d (%s)\n', selMod, ctype);
         for iParam = 1:nParam
             transformFunc = transform{selMod}{iParam};
-            if ischar(transformFunc)
-                transformFunc = str2func(transformFunc);
-            end
+            transformFunc = str2func(transformFunc);
+            
             groupParam(iParam) = transformFunc(groupParam(iParam));
             subParam(:, iParam) = transformFunc(subParam(:, iParam));
         end
