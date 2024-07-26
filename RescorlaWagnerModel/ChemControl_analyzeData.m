@@ -29,6 +29,11 @@ data = load(inputFile).data;
 nSub = size(data, 2);
 fprintf('Loaded inputFile with %d subjects\n', size(data, 2));
 
+inputFile = fullfile(dirs.target, 'ChemControl_cbm_inputData_invalidSubs.mat');
+invalidData = load(inputFile).data;
+invalidNSub = size(invalidData, 2);
+fprintf('Loaded invalid inputFile with %d subjects\n', size(invalidData, 2));
+
 %% Settings
 nSub = size(data,2);
 nBlocks = size(data{1}.actions, 1);
@@ -51,6 +56,22 @@ sgtitle(sprintf("Learning Curves for Subjects in Low, Yoked Control Trials for %
 fig4 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig4)
 sgtitle(sprintf("Learning Curves for Subjects in All Trials for %i Subs, %i Blocks, %i Trials", nSub, nBlocks, nTrials))
+
+fig8 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig8)
+sgtitle(sprintf("Learning Curves for invalid subjects in High Control Trials for %i Subs, %i Blocks, %i Trials", nSub, nBlocks, nTrials))
+
+fig9 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig9)
+sgtitle(sprintf("Learning Curves for invalid subjects in Low, Non-yoked Control Trials for %i Subs, %i Blocks, %i Trials", nSub, nBlocks, nTrials))
+
+fig10 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig10)
+sgtitle(sprintf("Learning Curves for invalid subjects in Low, Yoked Control Trials for %i Subs, %i Blocks, %i Trials", nSub, nBlocks, nTrials))
+
+fig11 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig11)
+sgtitle(sprintf("Learning Curves for invalid subjects in All Trials for %i Subs, %i Blocks, %i Trials", nSub, nBlocks, nTrials))
 
 %% Extracting subsets of data
 hc_d = cell(1, nSub);
@@ -81,6 +102,37 @@ plotParticipantCurves(hc_d, fig1);
 plotParticipantCurves(lc_d, fig2);
 plotParticipantCurves(yc_d, fig3);
 plotParticipantCurves(data, fig4);
+
+%% Extracting subsets of data for invalid subjects
+hc_invalid_d = cell(1, invalidNSub);
+lc_invalid_d = cell(1, invalidNSub);
+yc_invalid_d = cell(1, invalidNSub);
+nBlocksInvalid = size(invalidData{1}.controllability, 1);
+
+for iSub = 1:invalidNSub
+    d_invalid = invalidData{iSub};  % Get the struct for the current invalid subject
+    
+    % Identify high control (hc) blocks
+    hc_idx_invalid = find(d_invalid.controllability(:, 1));
+    
+    % Identify low control (lc) blocks where controllability is 0 and isYoked is 0
+    lc_idx_invalid = find(~d_invalid.controllability(:, 1) & ~d_invalid.isYoked(:, 1));
+    
+    % Identify yoked control (yc) blocks where isYoked is 1
+    yc_idx_invalid = find(d_invalid.isYoked(:, 1));
+    
+    % Extract the data for the high control blocks and store it
+    hc_invalid_d{iSub} = structfun(@(x) x(hc_idx_invalid, :), d_invalid, 'UniformOutput', false);
+    lc_invalid_d{iSub} = structfun(@(x) x(lc_idx_invalid, :), d_invalid, 'UniformOutput', false);
+    yc_invalid_d{iSub} = structfun(@(x) x(yc_idx_invalid, :), d_invalid, 'UniformOutput', false);
+end
+
+%% Plot learning curves for each data type for invalid subjects
+
+plotParticipantCurves(hc_invalid_d, fig8);
+plotParticipantCurves(lc_invalid_d, fig9);
+plotParticipantCurves(yc_invalid_d, fig10);
+plotParticipantCurves(invalidData, fig11);
 
 %% Block transitions with conficence bounds
 % Initialize data structures for each transition
@@ -282,7 +334,6 @@ for idx = 1:numel(transitions)
     grid on;
 end
 
-%% Accuracy plotting
 accBySub = zeros(nSub, 1);
 
 for iSub = 1:nSub
@@ -295,18 +346,36 @@ for iSub = 1:nSub
 
     actions = actions == 1;
     correctActions = goStates & actions | noGoStates & ~actions;
-    acc = mean(correctActions,'all');
+    acc = mean(correctActions(:, 30:40),'all');
     accBySub(iSub) = acc;
 end
+
+% Calculate mean and standard deviation
+meanAcc = mean(accBySub);
+stdAcc = std(accBySub);
+
+% Identify subjects more than 2 standard deviations below the mean
+threshold = meanAcc - 2 * stdAcc;
+outliers = accBySub < threshold;
+
 fig8 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig8)
 sgtitle("Accuracy by Subject")
 plot(accBySub, 'LineWidth', 2);
-yline(0.5, "LineStyle", "-", "Color", "#808080", 'LineWidth',2)
+hold on;
+yline(0.5, "LineStyle", "-", "Color", "#808080", 'LineWidth', 2)
+
+% Highlight outliers
+plot(find(outliers), accBySub(outliers), 'ro', 'MarkerSize', 10, 'LineWidth', 2);
+
 ylabel("Accuracy")
 xlabel("Subject")
 grid on;
 
+% Annotate outliers
+for i = find(outliers)'
+    text(i, accBySub(i), sprintf('%.2f', accBySub(i)), 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'right');
+end
 %% Response time by state
 allHcRts = {};
 allLcRts = {};
@@ -602,6 +671,56 @@ legend(labels, 'Location', 'Best');
 title('Weighted Probability of Shift After Loss by Control Condition');
 xlim([0, 10]);
 grid on;
+
+
+
+
+%% Accuracy by state and control type
+
+controlTypes = {'High Control', 'Low Control', 'Yoked Control', 'All Data'};
+controlData = {hc_d, lc_d, yc_d, data}; % Add data for all control types
+
+meanGoBias = zeros(1, numel(controlTypes));
+semGoBias = zeros(1, numel(controlTypes));
+
+for iType = 1:numel(controlTypes)
+    currentData = controlData{iType};
+    nSub = numel(currentData);
+    
+    goBiasBySub = zeros(1, nSub);
+
+    for iSub = 1:nSub
+        subj = currentData{iSub};
+
+        actions = subj.actions;
+        states = subj.stimuli;
+        goActions = actions == 1;
+        noGoActions = actions == 2;
+        accuracyGoToWin = mean(goActions(states == 1), 'all');
+        accuracyNoGoToWin = mean(noGoActions(states == 3), 'all');
+        goBiasBySub(iSub) = accuracyGoToWin - accuracyNoGoToWin;
+    end
+
+    meanGoBias(iType) = mean(goBiasBySub, 'omitnan');
+    semGoBias(iType) = nanstd(goBiasBySub, [], 2) / sqrt(nSub);
+end
+
+% Plotting
+figHandle = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+bar(meanGoBias, 'FaceColor', 'flat');
+hold on;
+
+% Add error bars
+errorbar(1:numel(controlTypes), meanGoBias, semGoBias, 'k', 'LineStyle', 'none', 'LineWidth', 1.5);
+
+% Add labels and title
+set(gca, 'XTickLabel', controlTypes);
+xlabel('Control Type');
+ylabel('Go Bias (P(Go|Win) - P(NoGo|Win))');
+title('Go Bias by Control Type (Acc(GoToWin) - Acc(NoGoToWin))');
+ylim([-1, 1]);
+grid on;
+hold off;
 
 
 % Function to calculate the mean response time for a given cell array

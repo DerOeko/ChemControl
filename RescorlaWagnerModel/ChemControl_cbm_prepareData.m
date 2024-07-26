@@ -47,7 +47,7 @@ nTrials = 40; % how many trials in a block
 subFind = dir(fullfile(dirs.behav, "*.csv"));
 subFind = {subFind.name};
 
-invalidSubs = [2 10 19 20 38 39 40];
+invalidSubs = [1 2 3 10 19 20 28 29 35 38 39 40];
 validSubs = setdiff(1:numel(subFind), invalidSubs);
 subFind = {subFind{validSubs}};
 nSub = numel(subFind);
@@ -58,10 +58,6 @@ for iSub = 1:nSub % 1 till number of elements in subFind
     subList(iSub) = str2double(string(extractBetween(subFind{iSub}, 'sub-', '_Robo'))); 
     % extracts the actual "sub" number of each subject --> check which ones found
 end
-
-
-% 2, 12, 21, and 22 are below 55% accuracy in high control trials
-% 2, 11, 19, 20
 % ----------------------------------------------------------------------- %
 %% Load rawData:
 
@@ -173,6 +169,135 @@ end
 
 fprintf('Save data\n')
 outputFile = fullfile(dirs.target, 'ChemControl_cbm_inputData.mat');
+save(outputFile, 'data');
+
+%% Get invalid subs
+
+subFind = dir(fullfile(dirs.behav, "*.csv"));
+subFind = {subFind.name};
+
+validSubs = [1 2 3 10 19 20 28 29 35];
+subFind = {subFind{validSubs}};
+nSub = numel(subFind);
+
+subList = nan(numel(subFind), 1);
+% Retrieve names of subject fiels:
+for iSub = 1:nSub % 1 till number of elements in subFind
+    subList(iSub) = str2double(string(extractBetween(subFind{iSub}, 'sub-', '_Robo'))); 
+    % extracts the actual "sub" number of each subject --> check which ones found
+end
+
+% ----------------------------------------------------------------------- %
+%% Load rawData:
+
+% Preallocate a cell array to store all the data
+rawData = cell(nSub, 1);
+
+% Load raw data
+fprintf("Load raw data\n");
+
+for iSub = 1:nSub
+    fprintf('Load data for subject %03d\n', iSub);
+    fprintf('SubID: %03d\n', subList(iSub));
+    % Define file path
+    filePath = fullfile(folderPath, subFind{iSub});
+    
+    % Define options for reading calibration data (rows 44 to 83)
+    optsCal = detectImportOptions(filePath);
+    optsCal.DataLines = [44, 83]; % Lines 44 to 83
+    optsCal.Delimiter = ","; % CSV delimiter
+    optsCal.MissingRule = "fill"; % Fill missing data
+    optsCal.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_respCalibrate_keys", "Yoked", "key_respCalibrate_rt"];
+    
+    % Define options for reading main data (rows 85 to Inf)
+    optsMain = detectImportOptions(filePath);
+    optsMain.DataLines = [85, 404]; % Start reading from line 85
+    optsMain.Delimiter = ","; % CSV delimiter
+    optsMain.MissingRule = "fill"; % Omit rows with missing data
+    optsMain.SelectedVariableNames = ["trialType", "miniBlock", "controllability", "randHC", "randLC", "randomReward", "feedback", "key_resp_keys", "Yoked", "key_resp_rt"];
+    
+    % Try to load the calibration data
+    try
+        calibrationData = readtable(filePath, optsCal);
+    catch ME
+        fprintf('Error loading calibration data for subject %03d: %s\n', iSub, ME.message);
+        calibrationData = table(); % Create an empty table if an error occurs
+    end
+    
+    % Fill missing data in calibrationData
+    calibrationData.randLC(:) = 2;
+    calibrationData.Yoked(:) = 0;
+    calibrationData.key_respCalibrate_rt(isnan(calibrationData.key_respCalibrate_rt)) = 0;
+
+    % Rename variable names
+    calibrationData = renamevars(calibrationData, ["trialType", "key_respCalibrate_keys", "feedback", "Yoked", "key_respCalibrate_rt"], ["stimuli", "actions", "outcomes", "isYoked", "responseTime"]);
+
+    % Try to load the main data
+    try
+        mainData = readtable(filePath, optsMain);
+    catch ME
+        fprintf('Error loading main data for subject %03d: %s\n', iSub, ME.message);
+        mainData = table(); % Create an empty table if an error occurs
+    end
+
+    mainData = renamevars(mainData, ["trialType", "key_resp_keys", "feedback", "Yoked","key_resp_rt"], ["stimuli", "actions", "outcomes", "isYoked" , "responseTime"]);
+    % Fill missing response times with 0 for NoGo responses
+    mainData.responseTime(isnan(mainData.responseTime)) = 0;
+
+    % Combine calibration data and main data
+    data = [calibrationData; mainData];
+    
+    % Convert data types and values
+    data.stimuli(data.stimuli > 4, :) = data.stimuli(data.stimuli > 4) - 4; 
+    data.miniBlock = int8(data.miniBlock);
+    data.controllability = strcmp(data.controllability, 'high');
+    data.randHC = int8(data.randHC);
+    data.randLC = int8(data.randLC);
+    data.randomReward = data.randomReward == 1;
+    data.isYoked = logical(data.isYoked);
+
+    % Convert actions from cell array of strings to a string array if necessary
+    data.actions = string(data.actions);
+    
+    % Replace 'space' with '1' and 'None' with '2'
+    data.actions(data.actions == "space") = "1";
+    data.actions(data.actions == "None") = "2";
+    
+    % Convert the string array to integers
+    data.actions = str2double(data.actions);  % This converts the string numbers to actual numeric (double) values
+    
+    % Convert outcomes to -1, 0, 1
+    data.outcomes = double((data.outcomes == 10) - (data.outcomes == -10));
+    
+    % Store the data for this subject in the cell array
+    rawData{iSub} = data;
+end
+
+% ----------------------------------------------------------------------- %
+%% Reshape into structure:
+
+fprintf('Reshape data\n');
+
+% Initialize empty structure:
+data = struct([]);
+
+for iSub = 1:nSub
+    data{iSub}.stimuli = reshape(rawData{iSub}.stimuli, [nTrials, nBlocks])';
+    data{iSub}.actions = reshape(rawData{iSub}.actions, [nTrials, nBlocks])';
+    data{iSub}.outcomes = reshape(rawData{iSub}.outcomes, [nTrials, nBlocks])';
+    data{iSub}.randHC = reshape(rawData{iSub}.randHC, [nTrials, nBlocks])';
+    data{iSub}.randLC = reshape(rawData{iSub}.randLC, [nTrials, nBlocks])';
+    data{iSub}.isYoked = reshape(rawData{iSub}.isYoked, [nTrials, nBlocks])';
+    data{iSub}.randomReward = reshape(rawData{iSub}.randomReward, [nTrials, nBlocks])';
+    data{iSub}.controllability = reshape(rawData{iSub}.controllability, [nTrials, nBlocks])';
+    data{iSub}.responseTime = reshape(rawData{iSub}.responseTime, [nTrials, nBlocks])';
+end
+
+% ----------------------------------------------------------------------- %
+%% Save as one big rawData structure:
+
+fprintf('Save data\n')
+outputFile = fullfile(dirs.target, 'ChemControl_cbm_inputData_invalidSubs.mat');
 save(outputFile, 'data');
 
 % END OF FILE
