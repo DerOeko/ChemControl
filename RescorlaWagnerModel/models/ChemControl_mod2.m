@@ -6,17 +6,35 @@ ep = sigmoid(parameters(1));
 rho = exp(parameters(2));
 goBias = parameters(3);
 % ----------------------------------------------------------------------- %
-%% Unpack data:
 
+%% Unpack data:
 actions = subj.actions;
 outcomes = subj.outcomes;
 states = subj.stimuli;
 
+% Identify win and non-win states
+isWinState = mod(states, 2) == 1;
+isNonWinState = ~isWinState;
+
+% Transform outcomes for win states
+outcomes(isWinState & outcomes == 0) = -1;
+
+% Transform outcomes for non-win states
+outcomes(isNonWinState & outcomes == 0) = 1;
+
+% Number of blocks:
 B = size(outcomes, 1);
+
+% Number of trials:
 T = size(outcomes, 2);
-initQ = [0.5 -0.5 0.5 -0.5] * rho;
+initQ = [0 0 0 0];
 
 loglik = 0;
+
+% Store actions, outcomes and stimuli
+
+% ----------------------------------------------------------------------- %
+%% Calculating log likelihood for action sequence with this model:
 
 for b = 1:B
     w_g = initQ;
@@ -31,7 +49,6 @@ for b = 1:B
 
         w_g(s) = q_g(s) + goBias;
         w_ng(s) = q_ng(s);
-
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
 

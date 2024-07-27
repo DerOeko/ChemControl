@@ -71,7 +71,7 @@ end
 %% 02) SIMULATE
 %% Schedules
 
-nRuns = 50;
+nRuns = 100;
 nTrials = 80;
 nBlocks = 16;
 nStates = 4;
@@ -103,8 +103,6 @@ for iSchedule = 1:nSchedules
 end
 
 %% 02a) Run settings
-
-
 
 fig1 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig1)
@@ -181,7 +179,7 @@ omegas21 = cell(nSchedules, 1);
 
 
 
-selMods = [1:4 5 16 21 22 23 24 25 26];
+selMods = 1:nMod;
 
 % 02b) Run simulation and plot
 for iMod = selMods
@@ -190,109 +188,109 @@ for iMod = selMods
     for iRun = 1:nRuns
         subj = sim_subj(nBlocks, nTrials);
         out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
-        if iMod >= 6 && iMod <= 21
-            % Store omegas for models 6 to 21
-            schedule_idx = subj.selected_schedule_idx;
-            reshaped_omegas = reshape(out.omegas', [nTrials*nBlocks, 1]);
-        
-            if iMod == 6
-                if isempty(omegas6{schedule_idx})
-                    omegas6{schedule_idx} = reshaped_omegas;
-                else
-                    omegas6{schedule_idx} = [omegas6{schedule_idx}, reshaped_omegas];
-                end
-            elseif iMod == 7
-                if isempty(omegas7{schedule_idx})
-                    omegas7{schedule_idx} = reshaped_omegas;
-                else
-                    omegas7{schedule_idx} = [omegas7{schedule_idx}, reshaped_omegas];
-                end            
-            elseif iMod == 8
-                if isempty(omegas8{schedule_idx})
-                    omegas8{schedule_idx} = reshaped_omegas;
-                else
-                    omegas8{schedule_idx} = [omegas8{schedule_idx}, reshaped_omegas];
-                end            
-            elseif iMod == 9
-                if isempty(omegas9{schedule_idx})
-                    omegas9{schedule_idx} = reshaped_omegas;
-                else
-                    omegas9{schedule_idx} = [omegas9{schedule_idx}, reshaped_omegas];
-                end            
-            elseif iMod == 10
-                if isempty(omegas10{schedule_idx})
-                    omegas10{schedule_idx} = reshaped_omegas;
-                else
-                    omegas10{schedule_idx} = [omegas10{schedule_idx}, reshaped_omegas];
-                end            
-            elseif iMod == 11
-                if isempty(omegas11{schedule_idx})
-                    omegas11{schedule_idx} = reshaped_omegas;
-                else
-                    omegas11{schedule_idx} = [omegas11{schedule_idx}, reshaped_omegas];
-                end            
-            elseif iMod == 12
-                if isempty(omegas12{schedule_idx})
-                    omegas12{schedule_idx} = reshaped_omegas;
-                else
-                    omegas12{schedule_idx} = [omegas12{schedule_idx}, reshaped_omegas];
-                end            
-            elseif iMod == 13
-                if isempty(omegas13{schedule_idx})
-                    omegas13{schedule_idx} = reshaped_omegas;
-                else
-                    omegas13{schedule_idx} = [omegas13{schedule_idx}, reshaped_omegas];
-                end            
-            elseif iMod == 14
-                if isempty(omegas14{schedule_idx})
-                    omegas14{schedule_idx} = reshaped_omegas;
-                else
-                    omegas14{schedule_idx} = [omegas14{schedule_idx}, reshaped_omegas];
-                end
-            elseif iMod == 15
-                if isempty(omegas15{schedule_idx})
-                    omegas15{schedule_idx} = reshaped_omegas;
-                else
-                    omegas15{schedule_idx} = [omegas15{schedule_idx}, reshaped_omegas];
-                end
-            elseif iMod == 16
-                if isempty(omegas16{schedule_idx})
-                    omegas16{schedule_idx} = reshaped_omegas;
-                else
-                    omegas16{schedule_idx} = [omegas16{schedule_idx}, reshaped_omegas];
-                end
-            elseif iMod == 17
-                if isempty(omegas17{schedule_idx})
-                    omegas17{schedule_idx} = reshaped_omegas;
-                else
-                    omegas17{schedule_idx} = [omegas17{schedule_idx}, reshaped_omegas];
-                end
-            elseif iMod == 18
-                if isempty(omegas18{schedule_idx})
-                    omegas18{schedule_idx} = reshaped_omegas;
-                else
-                    omegas18{schedule_idx} = [omegas18{schedule_idx}, reshaped_omegas];
-                end
-            elseif iMod == 19
-                if isempty(omegas19{schedule_idx})
-                    omegas19{schedule_idx} = reshaped_omegas;
-                else
-                    omegas19{schedule_idx} = [omegas19{schedule_idx}, reshaped_omegas];
-                end
-            elseif iMod == 20
-                if isempty(omegas20{schedule_idx})
-                    omegas20{schedule_idx} = reshaped_omegas;
-                else
-                    omegas20{schedule_idx} = [omegas20{schedule_idx}, reshaped_omegas];
-                end
-            elseif iMod == 21
-                if isempty(omegas21{schedule_idx})
-                    omegas21{schedule_idx} = reshaped_omegas;
-                else
-                    omegas21{schedule_idx} = [omegas21{schedule_idx}, reshaped_omegas];
-                end
-            end
-        end
+        % if iMod >= 7 && iMod <= 21
+        %     % Store omegas for models 6 to 21
+        %     schedule_idx = subj.selected_schedule_idx;
+        %     reshaped_omegas = reshape(out.omegas', [nTrials*nBlocks, 1]);
+        % 
+        %     if iMod == 6
+        %         if isempty(omegas6{schedule_idx})
+        %             omegas6{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas6{schedule_idx} = [omegas6{schedule_idx}, reshaped_omegas];
+        %         end
+        %     elseif iMod == 7
+        %         if isempty(omegas7{schedule_idx})
+        %             omegas7{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas7{schedule_idx} = [omegas7{schedule_idx}, reshaped_omegas];
+        %         end            
+        %     elseif iMod == 8
+        %         if isempty(omegas8{schedule_idx})
+        %             omegas8{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas8{schedule_idx} = [omegas8{schedule_idx}, reshaped_omegas];
+        %         end            
+        %     elseif iMod == 9
+        %         if isempty(omegas9{schedule_idx})
+        %             omegas9{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas9{schedule_idx} = [omegas9{schedule_idx}, reshaped_omegas];
+        %         end            
+        %     elseif iMod == 10
+        %         if isempty(omegas10{schedule_idx})
+        %             omegas10{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas10{schedule_idx} = [omegas10{schedule_idx}, reshaped_omegas];
+        %         end            
+        %     elseif iMod == 11
+        %         if isempty(omegas11{schedule_idx})
+        %             omegas11{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas11{schedule_idx} = [omegas11{schedule_idx}, reshaped_omegas];
+        %         end            
+        %     elseif iMod == 12
+        %         if isempty(omegas12{schedule_idx})
+        %             omegas12{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas12{schedule_idx} = [omegas12{schedule_idx}, reshaped_omegas];
+        %         end            
+        %     elseif iMod == 13
+        %         if isempty(omegas13{schedule_idx})
+        %             omegas13{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas13{schedule_idx} = [omegas13{schedule_idx}, reshaped_omegas];
+        %         end            
+        %     elseif iMod == 14
+        %         if isempty(omegas14{schedule_idx})
+        %             omegas14{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas14{schedule_idx} = [omegas14{schedule_idx}, reshaped_omegas];
+        %         end
+        %     elseif iMod == 15
+        %         if isempty(omegas15{schedule_idx})
+        %             omegas15{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas15{schedule_idx} = [omegas15{schedule_idx}, reshaped_omegas];
+        %         end
+        %     elseif iMod == 16
+        %         if isempty(omegas16{schedule_idx})
+        %             omegas16{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas16{schedule_idx} = [omegas16{schedule_idx}, reshaped_omegas];
+        %         end
+        %     elseif iMod == 17
+        %         if isempty(omegas17{schedule_idx})
+        %             omegas17{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas17{schedule_idx} = [omegas17{schedule_idx}, reshaped_omegas];
+        %         end
+        %     elseif iMod == 18
+        %         if isempty(omegas18{schedule_idx})
+        %             omegas18{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas18{schedule_idx} = [omegas18{schedule_idx}, reshaped_omegas];
+        %         end
+        %     elseif iMod == 19
+        %         if isempty(omegas19{schedule_idx})
+        %             omegas19{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas19{schedule_idx} = [omegas19{schedule_idx}, reshaped_omegas];
+        %         end
+        %     elseif iMod == 20
+        %         if isempty(omegas20{schedule_idx})
+        %             omegas20{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas20{schedule_idx} = [omegas20{schedule_idx}, reshaped_omegas];
+        %         end
+        %     elseif iMod == 21
+        %         if isempty(omegas21{schedule_idx})
+        %             omegas21{schedule_idx} = reshaped_omegas;
+        %         else
+        %             omegas21{schedule_idx} = [omegas21{schedule_idx}, reshaped_omegas];
+        %         end
+        %     end
+        % end
 
       % Directly store results in the preallocated arrays
         allHCcell{iRun} = out.HCcell;
@@ -412,114 +410,114 @@ plotOmegas([averageOmegas6, averageOmegas7, averageOmegas8, averageOmegas9, aver
 % Quick turns between inventing, fitting and plotting. Meant to help with
 % inventing new models quicker. 
 
-% Get separate datasets
-hc_d = cell(1, nSub);
-lc_d = cell(1, nSub);
-nBlocks = size(data{1}.controllability, 1);
-
-for iSub = 1:nSub
-    d = data{iSub};
-    % Identify high control (hc) blocks
-    hc_idx = find(d.controllability(:, 1) == 1);
-    
-    % Identify low control (lc) blocks where controllability is 0 and isYoked is 0
-    lc_idx = find(d.controllability(:, 1) == 0);
-
-    % Extract the data for the high control blocks and store it
-    hc_d{iSub} = structfun(@(x) x(hc_idx, :), d, 'UniformOutput', false);
-    lc_d{iSub} = structfun(@(x) x(lc_idx, :), d, 'UniformOutput', false);
-end
+% % Get separate datasets
+% hc_d = cell(1, nSub);
+% lc_d = cell(1, nSub);
+% nBlocks = size(data{1}.controllability, 1);
+% 
+% for iSub = 1:nSub
+%     d = data{iSub};
+%     % Identify high control (hc) blocks
+%     hc_idx = find(d.controllability(:, 1) == 1);
+% 
+%     % Identify low control (lc) blocks where controllability is 0 and isYoked is 0
+%     lc_idx = find(d.controllability(:, 1) == 0);
+% 
+%     % Extract the data for the high control blocks and store it
+%     hc_d{iSub} = structfun(@(x) x(hc_idx, :), d, 'UniformOutput', false);
+%     lc_d{iSub} = structfun(@(x) x(lc_idx, :), d, 'UniformOutput', false);
+% end
 
 %% Select model and simulate it
-selMod = 22;
-modelHandle = str2func(sprintf("ChemControl_mod%d", selMod));
-modelSimHandle = str2func(sprintf("ChemControl_mod%d_modSim", selMod));
-
-% Run settings
-nRuns = 100;
-nTrials = 80;
-nBlocks = 16;
-nStates = 4;
-nSchedules = 11;
-
-% Simulate model with given parameters
-fname_mod = fullfile(dirs.lap, sprintf('lap_mod%02d_allData.mat', selMod));
-
-% Check if the file exists
-if isfile(fname_mod) 
-    fname = load(fname_mod);
-else
-    % Fit model using LAP cbm if file does not exist
-    prior = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 3]); % prior_model_dynamicOmega2
-    control_types = {'data', 'hc_d', 'lc_d'};
-    for ctype = control_types
-        ctype = ctype{1};
-
-        fprintf('Processing %s data\n', ctype);
-        d = eval(ctype);
-
-        fprintf('Fitting Laplace Approximation for %s data\n', ctype);
-        switch ctype
-            case 'data'
-                fname_mod = fullfile(dirs.lap, sprintf('lap_mod%02d_allData.mat', selMod));
-            case 'hc_d'
-                fname_mod = fullfile(dirs.lap, sprintf('lap_mod%02d_hc.mat', selMod));
-            case 'lc_d'
-                fname_mod = fullfile(dirs.lap, sprintf('lap_mod%02d_lc.mat', selMod));
-        end
-
-        cbm_lap(d, modelHandle, prior, fname_mod);
-    end
-end
-fname = load(fullfile(dirs.lap, sprintf('lap_mod%02d_allData.mat', selMod)));
-
-cbm = fname.cbm;
-subParam  = cbm.output.parameters;
-parameters = mean(subParam, 1);
-
-% Preallocate cell arrays for all outputs
-allHCcell = cell(nRuns, 1);
-allLCcell = cell(nRuns, 1);
-allYCcell = cell(nRuns, 1);
-
-allOmegas = {}; % Store omega values for each run
-
-for iRun = 1:nRuns
-    subj = sim_subj(nBlocks, nTrials);
-
-    out = modelSimHandle(parameters, subj);
-
-    % Directly store results in the preallocated arrays
-    allHCcell{iRun} = out.HCcell;
-    allLCcell{iRun} = out.LCcell;
-    allYCcell{iRun} = out.YCcell;
-
-    % Store reshaped omega values
-    if subj.selected_schedule_idx == 1
-        allOmegas{end+1} = reshape(out.omegas', [nTrials*nBlocks, 1]);
-    end
-end
-% Concatenate all results after the loop
-HCcell = vertcat(allHCcell{:});
-LCcell = vertcat(allLCcell{:});
-YCcell = vertcat(allYCcell{:});
-
-meanOmega = mean(allOmegas, 2);
-
-figX = figure;
-sgtitle(sprintf("M%02d: Learning curves in different control types", selMod))
-
-controls = ["HC", "LC", "YC"];
-for i = 1:length(controls)
-    subplot(1, 3, i)
-    plotLearningCurves(eval(sprintf("%scell", controls(i))), sprintf("%s control type", controls(i)), figX);
-end
-
-figX = figure;
-sgtitle(sprintf("M%02d: Average Omega over time with controllability probability", selMod));
-hold on;
-plot(meanOmega, 'LineWidth', 2);
-plot(1:length(cPs(iSchedule, :)), cPs(iSchedule, :), 'LineWidth', 2, 'LineStyle', '--', 'Color', '#AEAEAE', 'DisplayName', 'Outcome Probability')
-grid on;
-hold off;
+% selMod = 22;
+% modelHandle = str2func(sprintf("ChemControl_mod%d", selMod));
+% modelSimHandle = str2func(sprintf("ChemControl_mod%d_modSim", selMod));
+% 
+% % Run settings
+% nRuns = 1;
+% nTrials = 80;
+% nBlocks = 16;
+% nStates = 4;
+% nSchedules = 11;
+% 
+% % Simulate model with given parameters
+% fname_mod = fullfile(dirs.lap, sprintf('lap_mod%02d_allData.mat', selMod));
+% 
+% % Check if the file exists
+% if isfile(fname_mod) 
+%     fname = load(fname_mod);
+% else
+%     % Fit model using LAP cbm if file does not exist
+%     prior = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 3]); % prior_model_dynamicOmega2
+%     control_types = {'data', 'hc_d', 'lc_d'};
+%     for ctype = control_types
+%         ctype = ctype{1};
+% 
+%         fprintf('Processing %s data\n', ctype);
+%         d = eval(ctype);
+% 
+%         fprintf('Fitting Laplace Approximation for %s data\n', ctype);
+%         switch ctype
+%             case 'data'
+%                 fname_mod = fullfile(dirs.lap, sprintf('lap_mod%02d_allData.mat', selMod));
+%             case 'hc_d'
+%                 fname_mod = fullfile(dirs.lap, sprintf('lap_mod%02d_hc.mat', selMod));
+%             case 'lc_d'
+%                 fname_mod = fullfile(dirs.lap, sprintf('lap_mod%02d_lc.mat', selMod));
+%         end
+% 
+%         cbm_lap(d, modelHandle, prior, fname_mod);
+%     end
+% end
+% fname = load(fullfile(dirs.lap, sprintf('lap_mod%02d_allData.mat', selMod)));
+% 
+% cbm = fname.cbm;
+% subParam  = cbm.output.parameters;
+% parameters = mean(subParam, 1);
+% 
+% % Preallocate cell arrays for all outputs
+% allHCcell = cell(nRuns, 1);
+% allLCcell = cell(nRuns, 1);
+% allYCcell = cell(nRuns, 1);
+% 
+% allOmegas = {}; % Store omega values for each run
+% 
+% for iRun = 1:nRuns
+%     subj = sim_subj(nBlocks, nTrials);
+% 
+%     out = modelSimHandle(parameters, subj);
+% 
+%     % Directly store results in the preallocated arrays
+%     allHCcell{iRun} = out.HCcell;
+%     allLCcell{iRun} = out.LCcell;
+%     allYCcell{iRun} = out.YCcell;
+% 
+%     % Store reshaped omega values
+%     if subj.selected_schedule_idx == 1
+%         allOmegas{end+1} = reshape(out.omegas', [nTrials*nBlocks, 1]);
+%     end
+% end
+% % Concatenate all results after the loop
+% HCcell = vertcat(allHCcell{:});
+% LCcell = vertcat(allLCcell{:});
+% YCcell = vertcat(allYCcell{:});
+% 
+% meanOmega = mean(allOmegas, 2);
+% 
+% figX = figure;
+% sgtitle(sprintf("M%02d: Learning curves in different control types", selMod))
+% 
+% controls = ["HC", "LC", "YC"];
+% for i = 1:length(controls)
+%     subplot(1, 3, i)
+%     plotLearningCurves(eval(sprintf("%scell", controls(i))), sprintf("%s control type", controls(i)), figX);
+% end
+% 
+% figX = figure;
+% sgtitle(sprintf("M%02d: Average Omega over time with controllability probability", selMod));
+% hold on;
+% plot(meanOmega, 'LineWidth', 2);
+% plot(1:length(cPs(iSchedule, :)), cPs(iSchedule, :), 'LineWidth', 2, 'LineStyle', '--', 'Color', '#AEAEAE', 'DisplayName', 'Outcome Probability')
+% grid on;
+% hold off;
 

@@ -1,13 +1,12 @@
 function [out] = ChemControl_mod2_modSim(parameters, subj)
-% Standard Q-learning model with delta learning rule.
+    % Standard Q-learning model with delta learning rule.
     
     % ----------------------------------------------------------------------- %
     %% Retrieve parameters:
     ep = sigmoid(parameters(1));
     rho = exp(parameters(2));
-    gB = parameters(3);
+    goBias = parameters(3);
     % ----------------------------------------------------------------------- %
-
     %% Unpack data:
 
     % Extract task features:
@@ -20,16 +19,17 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
     cali_randHC = subj.cali_randHC;
     cali_randLC = subj.cali_randLC;
     cali_randRewards = subj.cali_randReward;
-
+    
     % Data dimensions:
     B = size(stimuli, 1); % Number of blocks
     T = size(stimuli, 2); % Number of trials
     S = 4; % Number of stimuli
 
+    % Store outputs
     HCcell = cell(B/2, S); % Store go probs in HC
     LCcell = cell(B/4, S); % Store go probs in LC
     YCcell = cell(B/4, S);
-
+    
     HCpe = cell(B/2, S); % Store pe for each trial
     LCpe = cell(B/4, S);
     YCpe = cell(B/4, S);
@@ -37,21 +37,22 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
     HCarr = cell(B/2, S); % Average reward rate in high control blocks over time
     LCarr = cell(B/4, S);
     YCarr = cell(B/4, S);
-    
+
     actions = zeros(B, T);
     outcomes = zeros(B, T);
-
-    q0 = [0.5 -0.5 0.5 -0.5];
+    
+    q0 = [0 0 0 0];
     hc = 0;
     lc = 0;
     yc = 0;
+
     %% Run calibration block
     rewardLossCounter = zeros([1, 2]);
-    q_g = q0 * rho;
-    q_ng = q0 * rho;
-    w_g = q0 * rho;
-    w_ng = q0 * rho;
-    
+    q_g = q0;
+    q_ng = q0;
+    w_g = q0;
+    w_ng = q0;
+
     isHC = 1;
     for t = 1:T
         s = cali_stimuli(t);
@@ -59,13 +60,17 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
         randLC = cali_randLC(t);
         isRewarded = cali_randRewards(t);
 
-        w_g(s) = q_g(s) + gB;
+        w_g(s) = q_g(s) + goBias;
         w_ng(s) = q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
         a = returnAction(p1);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
-
+        if mod(s, 2) && o == 0
+            o = -1;
+        elseif ~mod(s, 2) && o == 0
+            o = 1;
+        end
         if a==1
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
@@ -83,6 +88,7 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
     numRewarded = round(averageRewardRate * T); % number of rewarded trials
     numAvoided = round(averageLossRate * T);
 
+    %% Simulation 
     for b = 1:B
         switch controllabilities(b, 1)
             case 1
@@ -106,13 +112,13 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
         hc = hc + isHC;
         lc = lc + isLC;
         yc = yc + isYoked;
-        
-        q_g = q0 * rho;
-        q_ng = q0 * rho;
-        w_g = q0 * rho;
-        w_ng = q0 * rho;
-        arr = 0;
 
+        q_g = q0;
+        q_ng = q0;
+        w_g = q0;
+        w_ng = q0;
+
+        arr = 0;
         for t = 1:T
             s = stimuli(b, t);
             isWinState = mod(s, 2);
@@ -125,16 +131,20 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
             elseif ~isWinState && isYoked
                 isRewarded = avoidedVec(t);
             end
-
-            w_g(s) = q_g(s) + gB;
+                
+            w_g(s) = q_g(s) + goBias;
             w_ng(s) = q_ng(s);
-
             p1 = stableSoftmax(w_g(s), w_ng(s));
-            
+
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
             actions(b, t) = a;
             outcomes(b, t) = o;
+            if mod(s, 2) && o == 0
+                o = -1;
+            elseif ~mod(s, 2) && o == 0
+                o = 1;
+            end
             if a==1
                 pe = rho * o - q_g(s);
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
@@ -142,7 +152,7 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
                 pe = rho * o - q_ng(s);
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
             end
-
+            
             arr = arr + (o - arr);
 
             if isHC
@@ -157,7 +167,8 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
                 YCcell{yc, s}(end+1) = p1;
                 YCpe{yc, s}(end+1) = pe;
                 YCarr{yc, s}(end+1) = arr;
-            end   
+            end            
+
         end
     end
     % ----------------------------------------------------------------------- %
@@ -250,8 +261,8 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
             total_lossesLC = total_losses(b);
         end    
     end
- 
-        % Filtering data
+
+    % Filtering data
     highControlStimuli = zeros(B/2, T);
     lowControlStimuli = zeros(B/2, T);
     yokedLowControlStimuli = zeros(B/2, T);
@@ -288,7 +299,7 @@ function [out] = ChemControl_mod2_modSim(parameters, subj)
         end
     end
 
-% Initialize vectors
+    % Initialize vectors
     maxWins = T; % Maximum possible wins
     S = 4; % Number of stimuli
     

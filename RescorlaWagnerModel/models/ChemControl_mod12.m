@@ -1,94 +1,80 @@
 function [loglik] = ChemControl_mod12(parameters,subj)
 
-% personal guess model (what I would  plemented to test our
-% hypothesis)
-
+% Dynamic Omega, fixed pavlov, omega init
+% ----------------------------------------------------------------------- %
+%% Retrieve parameters:
 ep = sigmoid(parameters(1));
 rho = exp(parameters(2));
 goBias = parameters(3);
-alpha_up = sigmoid(parameters(4)); % probably not needed to have 2 LR
-alpha_down = sigmoid(parameters(5)); % probably not needed to have 2 LR
+alpha = sigmoid(parameters(4));
+beta = exp(parameters(5));
+thres = scaledSigmoid(parameters(6));
+omega_init = sigmoid(parameters(7));
+% ----------------------------------------------------------------------- %
 
+%% Unpack data:
 actions = subj.actions;
 outcomes = subj.outcomes;
 states = subj.stimuli;
 
+% Identify win and non-win states
+isWinState = mod(states, 2) == 1;
+isNonWinState = ~isWinState;
+
+% Transform outcomes for win states
+outcomes(isWinState & outcomes == 0) = -1;
+
+% Transform outcomes for non-win states
+outcomes(isNonWinState & outcomes == 0) = 1;
+
+% Number of blocks:
 B = size(outcomes, 1);
+
+% Number of trials:
 T = size(outcomes, 2);
-initQ = [0.5 -0.5 0.5 -0.5] * rho;
-initV = [0.5 -0.5 0.5 -0.5] * rho;
-initRR=0;
+initQ = [0 0 0 0];
 
 loglik = 0;
 
+% Store actions, outcomes and stimuli
+
+% ----------------------------------------------------------------------- %
+%% Calculating log likelihood for action sequence with this model:
+Omega = 0;
+
 for b = 1:B
-    
     w_g = initQ;
     w_ng = initQ;
     q_g = initQ;
     q_ng = initQ;
-    rr=initRR;
-    sv = initV;
-    omega = 0.5;
-
+    sv = [0.5 -0.5 0.5 -0.5];
+    omega = omega_init;
     for t=1:T
-        
         a = actions(b, t);
         o = outcomes(b, t);
         s = states(b, t);
 
-        % compute decision weights for go and no go (include the pavlovian
-        % values in the no go side of things
-        w_g(s) = omega * q_g(s) + (1-omega) * sv(s) + goBias;
+        w_g(s) = omega * q_g(s) + goBias + (1-omega) * sv(s);
         w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
-        
-        % compute decision probabilities
         p1 = stableSoftmax(w_g(s), w_ng(s));
-    
-        % to implement random exploration, use instead:
-        % p1 = stableSoftmax_randexp(w_g(s), w_ng(s),softmax_bounds);
-        
-        % no go prob
         p2 = 1-p1;
-        
-        % compute absolute reward prediction errors (between 0 and 1)
-        v_pe_abs=abs(o - sv(s));
-        if a==1
-            q_pe_abs=abs(o - q_g(s));
-        else
-            q_pe_abs=abs(o - q_ng(s));
-        end
 
-        % update Pavlovian model
-        %v_pe = rho * o - sv(s);
-        sv(s) = sv(s) + ep * (rho * o - sv(s));
+        v_pe = o - sv(s);
         
-        % update Instrumental model
         if a==1
             loglik = loglik + log(p1 + eps);
-            %q_pe = rho*o-q_g(s);
+            q_pe = o-q_g(s);
+
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
-            %p_explore=p2;
         elseif a==2
             loglik = loglik + log(p2 + eps);
-            %q_pe = rho*o-q_ng(s);
+
+            q_pe = o-q_ng(s);
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
-            %p_explore=p1;
         end
-        
-        % update global reward rate
-        %rr=rr+ep*(rho * o - sv(s));
-        sigdiff=sigmoid((v_pe_abs-q_pe_abs)*1000);
-        % different logics to update Omega: simply tracks the overall frequency of trials
-        % where the prediction error of the Pavlovian model is higher than that of the instrumental model
-        omega = omega + (sigdiff)*(alpha_up*(1-omega)) + (1-sigdiff) *(alpha_down*(0-omega));
-        % if v_pe_abs>q_pe_abs
-        %     omega = omega + alpha_up*(1 - omega);
-        % elseif v_pe_abs<q_pe_abs
-        %     omega = omega + alpha_down*(0 - omega);
-        % else
-        %     omega = omega;
-        % end     
+
+        Omega = Omega + alpha*(v_pe - q_pe - Omega);
+        omega = 1/(1+exp(-beta*(Omega-thres)));
     end
 end
 end

@@ -40,17 +40,17 @@ function [out] = ChemControl_mod1_modSim(parameters, subj)
     actions = zeros(B, T);
     outcomes = zeros(B, T);
     
-    q0 = [0.5 -0.5 0.5 -0.5];
+    q0 = [0 0 0 0];
     hc = 0;
     lc = 0;
     yc = 0;
 
     %% Run calibration block
     rewardLossCounter = zeros([1, 2]);
-    q_g = q0 * rho;
-    q_ng = q0 * rho;
-    w_g = q0 * rho;
-    w_ng = q0 * rho;
+    q_g = q0;
+    q_ng = q0;
+    w_g = q0;
+    w_ng = q0;
 
     isHC = 1;
     for t = 1:T
@@ -65,7 +65,11 @@ function [out] = ChemControl_mod1_modSim(parameters, subj)
 
         a = returnAction(p1);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
-        
+        if mod(s, 2) && o == 0
+            o = -1;
+        elseif ~mod(s, 2) && o == 0
+            o = 1;
+        end
         if a==1
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
@@ -108,10 +112,10 @@ function [out] = ChemControl_mod1_modSim(parameters, subj)
         lc = lc + isLC;
         yc = yc + isYoked;
 
-        q_g = q0 * rho;
-        q_ng = q0 * rho;
-        w_g = q0 * rho;
-        w_ng = q0 * rho;
+        q_g = q0;
+        q_ng = q0;
+        w_g = q0;
+        w_ng = q0;
 
         arr = 0;
         for t = 1:T
@@ -135,7 +139,11 @@ function [out] = ChemControl_mod1_modSim(parameters, subj)
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
             actions(b, t) = a;
             outcomes(b, t) = o;
-
+            if mod(s, 2) && o == 0
+                o = -1;
+            elseif ~mod(s, 2) && o == 0
+                o = 1;
+            end
             if a==1
                 pe = rho * o - q_g(s);
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));

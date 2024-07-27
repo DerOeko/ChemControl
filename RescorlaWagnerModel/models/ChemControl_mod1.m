@@ -11,12 +11,22 @@ actions = subj.actions;
 outcomes = subj.outcomes;
 states = subj.stimuli;
 
+% Identify win and non-win states
+isWinState = mod(states, 2) == 1;
+isNonWinState = ~isWinState;
+
+% Transform outcomes for win states
+outcomes(isWinState & outcomes == 0) = -1;
+
+% Transform outcomes for non-win states
+outcomes(isNonWinState & outcomes == 0) = 1;
+
 % Number of blocks:
 B = size(outcomes, 1);
 
 % Number of trials:
 T = size(outcomes, 2);
-initQ = [0.5 -0.5 0.5 -0.5] * rho;
+initQ = [0 0 0 0];
 
 loglik = 0;
 
