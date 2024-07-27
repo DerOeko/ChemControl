@@ -96,6 +96,19 @@ transform{20} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
 param_names{21} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
 transform{21} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
 
+param_names{22} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}', '\alpha_{lr}', '\omega_{init}'}; % DynamicOmega2Model
+transform{22} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid', 'sigmoid', 'sigmoid'};
+
+param_names{23} = {'\epsilon', '\rho', 'goBias', '\pi', '\alpha_{lr}'}; % FixedPavlovModel
+transform{23} = {'sigmoid', 'exp', '@(x) x', '@(x) x', 'sigmoid'};
+
+param_names{24} = {'\epsilon', '\rho', '\alpha_{lr}'}; % FixedPavlovModel
+transform{24} = {'sigmoid', 'exp', 'sigmoid'};
+
+param_names{25} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{25} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
+param_names{26} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
+transform{26} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};
 % ----------------------------------------------------------------------- %
 %% 00b) Select model:
 
@@ -104,10 +117,9 @@ modelFiles = dir(fullfile(dirs.models, '*.m'));
 
 % Set nMod to the number of .m files
 nMod = length(modelFiles);
-
-selMod = 7;
-
-fprintf("Selected model is no. %02d\n", selMod)
+selMods = [1:4 5 16 21 22 23 24 25 26];
+selMod = selMods(1);
+fprintf("Selected model is no. %02d\n", selMods(1))
 
 % ----------------------------------------------------------------------- %
 % ----------------------------------------------------------------------- %
@@ -118,10 +130,10 @@ fprintf("Selected model is no. %02d\n", selMod)
 
 parType = 'lap';
 dataType = 'allData';
-fname_mod = cell(nMod, 1);
+fname_mod = cell(length(selMods), 1);
 
-for iMod = 1:nMod
-    fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', iMod, dataType));
+for iMod = 1:length(selMods)
+    fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', selMods(iMod), dataType));
 end
 
 fprintf("Load model %d fit with LAP\n", selMod);
@@ -244,14 +256,14 @@ end
 % Parameter names:
 
 % Model names:
-model_names = {'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M11', 'M12', 'M13', 'M14', 'M15', 'M16', 'M17', 'M18', 'M19', 'M20', 'M21'};
+model_names = {'M01', 'M02', 'M03', 'M04', 'M05', 'M06', 'M07', 'M08', 'M09', 'M10', 'M11', 'M12', 'M13', 'M14', 'M15', 'M16', 'M17', 'M18', 'M19', 'M20', 'M21', 'M22', 'M23', 'M24', 'M25', 'M26'};
 % Create output name:
-modVec = 1:nMod;
-fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s.mat', num2str(modVec, '_%02d'), dataType));
-d = load(fname_hbi);
-c = d.cbm;
-freq = c.output.model_frequency;
-[~, k] = max(freq);
+% modVec = 1:nMod;
+% fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s.mat', num2str(modVec, '_%02d'), dataType));
+% d = load(fname_hbi);
+% c = d.cbm;
+% freq = c.output.model_frequency;
+% [~, k] = max(freq);
 
 %cbm_hbi_plot(fname_hbi, model_names, param_names{k}, transform{k});
 
@@ -259,7 +271,8 @@ freq = c.output.model_frequency;
 control_types = {'allData', 'hc', 'lc'};
 parTypes = {'hbi'};
 
-
+model_names = model_names(selMods);
+param_names = param_names(selMods);
 for ctype = control_types
     ctype = ctype{1}; % Extract string from cell
     
@@ -269,8 +282,8 @@ for ctype = control_types
         % Load model fitted with LAP or HBI
         if strcmp(parType, 'lap')
             fname_mod = cell(nMod, 1);
-            for iMod = 1:nMod
-                fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', iMod, ctype));
+            for iMod = 1:length(selMods)
+                fname_mod{iMod} = fullfile(dirs.lap, sprintf('lap_mod%02d_%s.mat', selMods(iMod), ctype));
             end
 
             fprintf("Load model %d fit with LAP (%s)\n", selMod, ctype);
@@ -354,7 +367,7 @@ for ctype = control_types
 
         % Plots
         % Create output name
-        fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s.mat', num2str(modVec, '_%02d'), ctype));
+        fname_hbi = fullfile(dirs.hbi, sprintf('hbi_mod%s_%s.mat', num2str(selMods, '_%02d'), ctype));
         d = load(fname_hbi);
         c = d.cbm;
         freq = c.output.model_frequency;

@@ -70,6 +70,12 @@ end
 
 %% 02) SIMULATE
 %% Schedules
+
+nRuns = 50;
+nTrials = 80;
+nBlocks = 16;
+nStates = 4;
+nSchedules = 11;
 controllabilitySchedules = [
     1, 2, 2, 1, 2, 1, 1, 2;
     2, 1, 2, 2, 1, 2, 1, 1;
@@ -98,11 +104,7 @@ end
 
 %% 02a) Run settings
 
-nRuns = 50;
-nTrials = 80;
-nBlocks = 16;
-nStates = 4;
-nSchedules = 11;
+
 
 fig1 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig1)
@@ -179,7 +181,7 @@ omegas21 = cell(nSchedules, 1);
 
 
 
-selMods = 1:nMod;
+selMods = [1:4 5 16 21 22 23 24 25 26];
 
 % 02b) Run simulation and plot
 for iMod = selMods
