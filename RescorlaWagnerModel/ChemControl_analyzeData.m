@@ -21,6 +21,7 @@ clear all; close all; clc
 
 dirs.root           = '/project/3017083.01/behavioral_study/scripts/matlab_scripts/RescorlaWagnerModel';
 dirs.target = fullfile(dirs.root, 'Log/Behavior/Modelling_CBM');
+dirs.hbi = fullfile(dirs.target, 'HBI_Results');
 
 %% Input file
 
@@ -723,6 +724,92 @@ grid on;
 hold off;
 
 
+%% Best fitting for which model?
+% This section should plot the average learning curve for hc, lc and yc for
+% all subjects which are most fitting to a certain model.
+
+% First, retrieve a list of subjects for each model.
+% Loop over each sublist of subjects for each model, and filter the data.
+% Plot the learning curves. 
+% Plot other patterns if necessary.
+
+% Initialize a variable to store the most recently modified file
+mostRecentFile = '';
+mostRecentDate = 0;
+files = dir(dirs.hbi);
+% Loop through each file to find the most recently modified one
+for k = 1:length(files)
+    % Check if the filename matches the pattern for model comparison files
+    if contains(files(k).name, 'hbi_mod_') && contains(files(k).name, '_allData.mat')
+        % Get the last modified date of the file
+        fileDate = files(k).datenum;
+        % Update the most recent file if this one is newer
+        if fileDate > mostRecentDate
+            mostRecentDate = fileDate;
+            mostRecentFile = files(k).name;
+        end
+    end
+end
+
+% Display the most recently modified file
+if ~isempty(mostRecentFile)
+    fprintf('The most recently modified file is: \n%s\n', mostRecentFile);
+else
+    fprintf('No matching files found.\n');
+end
+
+f_hbi = load(mostRecentFile);
+cbm = f_hbi.cbm;
+nSub = size(cbm.output.parameters{1}, 1);
+nMod = size(cbm.output.parameters, 1);
+responsibility = cbm.output.responsibility;
+
+subResp = nan(nSub, 1);
+for iSub = 1:nSub
+    subMax = max(responsibility(iSub, :));
+    subResp(iSub) = find(responsibility(iSub, :) == subMax);
+end
+
+modResp = cell(nMod, 1);
+for iMod = 1:nMod
+    modResp{iMod} = find(subResp == iMod);
+    nSubsForMod = size(modResp{iMod}, 1);
+    if nSubsForMod > 1
+        subsData = {};
+        for iSub = 1:length(modResp{iMod})
+            subsData{iSub} = structfun(@(x) x(:, :), data{modResp{iMod}(iSub)}, 'UniformOutput', false);
+        end
+
+        [sub_hc, sub_lc, sub_yc] = extractControlTypeData(subsData);
+        controlTypes = ["HC", "LC", "YC"];
+        dataTypes = [sub_hc, sub_lc, sub_yc];
+
+        figure;
+        sgtitle(sprintf("M%02d: Learning Curves for %i subjects", iMod, nSubsForMod))
+
+        for i = 1:3
+            subplot(1, 3, i);
+            title(controlTypes(i));
+            plotParticipantCurves(dataTypes(i), gcf)
+        end
+
+        figure;
+        title(sprintf("M%02d: Mean Probability of Staying by Control Type and Condition %i subjects", iMod, nSubsForMod));
+        plotStayAnalysis(subsData, gcf);
+    end
+end
+
+%% Win Stay Lose Shift By State
+% How likely am I going to stay if I performed action Go/NoGo and got
+% rewarded or punished? How does that differ between high and low control?
+% Initialize P_stay to hold counts of stay actions and total trials for each condition
+% Define data types
+
+
+
+
+
+%% ----------------------------------------------------------------------- %%
 % Function to calculate the mean response time for a given cell array
 function meanResponseTime = calculateMeanResponseTime(responseTimes)
     meanSize = floor(mean(cellfun(@length, responseTimes)));

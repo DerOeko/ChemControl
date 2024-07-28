@@ -62,7 +62,7 @@ function figHandle = plotParticipantCurves(data, figHandle)
     ylim([0.0, 1.0]);
     yline(0.5, ":", 'LineWidth', 3, 'Color', '#AEAEAE');
     legend('', 'G2W', '', 'G2A', '', 'NG2W', '', 'NG2A', 'Location', 'best');
-
+    
     grid on;
     
     hold off;
