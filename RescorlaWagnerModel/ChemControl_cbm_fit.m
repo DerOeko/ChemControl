@@ -84,6 +84,10 @@ priors{10} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_
 priors{11} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
 priors{12} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
 priors{13} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{14} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 10 5]); % prior_model_fixedPavlov
+priors{15} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 3 3]); % prior_model_fixedOmega
+priors{16} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{17} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
 
 % priors{8} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega3
 % priors{9} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega4

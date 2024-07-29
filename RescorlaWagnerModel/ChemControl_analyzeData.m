@@ -769,47 +769,86 @@ for iSub = 1:nSub
     subMax = max(responsibility(iSub, :));
     subResp(iSub) = find(responsibility(iSub, :) == subMax);
 end
-
+modCounter = 0;
 modResp = cell(nMod, 1);
+
 for iMod = 1:nMod
-    modResp{iMod} = find(subResp == iMod);
-    nSubsForMod = size(modResp{iMod}, 1);
-    if nSubsForMod > 1
-        subsData = {};
-        for iSub = 1:length(modResp{iMod})
-            subsData{iSub} = structfun(@(x) x(:, :), data{modResp{iMod}(iSub)}, 'UniformOutput', false);
-        end
-
-        [sub_hc, sub_lc, sub_yc] = extractControlTypeData(subsData);
-        controlTypes = ["HC", "LC", "YC"];
-        dataTypes = [sub_hc, sub_lc, sub_yc];
-
-        figure;
-        sgtitle(sprintf("M%02d: Learning Curves for %i subjects", iMod, nSubsForMod))
-
-        for i = 1:3
-            subplot(1, 3, i);
-            title(controlTypes(i));
-            plotParticipantCurves(dataTypes(i), gcf)
-        end
-
-        figure;
-        title(sprintf("M%02d: Mean Probability of Staying by Control Type and Condition %i subjects", iMod, nSubsForMod));
-        plotStayAnalysis(subsData, gcf);
-    end
+    modResp{iMod} = data(subResp == iMod);
 end
 
-%% Win Stay Lose Shift By State
+% Groups of mods to be combined
+group1Mods = [14];
+group2Mods = [9];
+
+% Combine data for groups
+combinedGroup1 = concatenateGroupData(group1Mods, modResp);
+combinedGroup2 = concatenateGroupData(group2Mods, modResp);
+
+% Plot data for both groups
+plotData(combinedGroup1, num2str(group1Mods, "M%02d_"));
+plotData(combinedGroup2, num2str(group2Mods, "M%02d_"));
+
 % How likely am I going to stay if I performed action Go/NoGo and got
 % rewarded or punished? How does that differ between high and low control?
 % Initialize P_stay to hold counts of stay actions and total trials for each condition
 % Define data types
+
+plotStayAnalysisForGroups(combinedGroup1, combinedGroup2, 'Group 1 (Mods 1, 3, 4)', 'Group 2 (Mods 7, 9)');
+
+
 
 
 
 
 
 %% ----------------------------------------------------------------------- %%
+% Function to plot data using plotParticipantCurves
+function plotData(combinedData, groupName)
+    % Extract control type data
+    [hc_d, lc_d, yc_d] = extractControlTypeData(combinedData);
+
+    % Create a new figure and title it
+    figure;
+    sgtitle(['Learning curves for ' groupName]);
+
+    % Subplot for hc_d
+    subplot(1, 3, 1); % 1 row, 3 columns, 1st subplot
+    plotParticipantCurves(hc_d, gcf);
+    title('HC_D');
+
+    % Subplot for lc_d
+    subplot(1, 3, 2); % 1 row, 3 columns, 2nd subplot
+    plotParticipantCurves(lc_d, gcf);
+    title('LC_D');
+
+    % Subplot for yc_d
+    subplot(1, 3, 3); % 1 row, 3 columns, 3rd subplot
+    plotParticipantCurves(yc_d, gcf);
+    title('YC_D');
+end
+
+% Function to plot data for stay analysis for both groups
+function plotStayAnalysisForGroups(combinedGroup1, combinedGroup2, groupName1, groupName2)
+    % Create a new figure for Stay Analysis
+    figure;
+    sgtitle('Stay Analysis for Both Groups');
+
+    % Subplot for stay analysis of the first group
+    subplot(1, 2, 1); % 1 row, 2 columns, 1st subplot
+    plotStayAnalysis(combinedGroup1, gcf);
+    title(['Mean Probability of Staying - ' groupName1]);
+
+    % Subplot for stay analysis of the second group
+    subplot(1, 2, 2); % 1 row, 2 columns, 2nd subplot
+    plotStayAnalysis(combinedGroup2, gcf);
+    title(['Mean Probability of Staying - ' groupName2]);
+end
+
+% Function to concatenate data from specified groups
+function combinedData = concatenateGroupData(groupMods, modResp)
+    combinedData = horzcat(modResp{groupMods}); % Concatenate the cell arrays for specified mods
+end
+
 % Function to calculate the mean response time for a given cell array
 function meanResponseTime = calculateMeanResponseTime(responseTimes)
     meanSize = floor(mean(cellfun(@length, responseTimes)));

@@ -61,6 +61,24 @@ param_names{9} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope'}; %
 transform{9} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp'};
 param_names{10} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
 transform{10} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp'};
+param_names{11} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope'}; % DynamicOmega1Model
+transform{11} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp'};
+param_names{12} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope', '\omega_{init}'}; % DynamicOmega1Model
+transform{12} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp', 'sigmoid'};
+param_names{13} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope', '\omega_{init}'}; % DynamicOmega1Model
+transform{13} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp', 'sigmoid'};
+
+param_names{14} = {'\epsilon', '\rho', 'goBias', '\pi', '\alpha_{lr}'}; % FixedPavlovModel
+transform{14} = {'sigmoid', 'exp', '@(x) x', '@(x) x', 'sigmoid'};
+
+param_names{15} = {'\epsilon', '\rho', 'goBias', '\omega', '\alpha_{lr}'}; % FixedOmegaModel
+transform{15} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid'};
+
+param_names{16} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope', '\alpha_{lr}'}; % DynamicOmega1Model
+transform{16} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp', 'sigmoid'};
+param_names{17} = {'\epsilon', '\rho', 'goBias', '\alpha', '\kappa', '\slope', '\alpha_{lr}'}; % DynamicOmega1Model
+transform{17} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'sigmoid', 'exp', 'sigmoid'};
+
 % 
 % param_names{7} = {'\epsilon', '\rho', 'goBias', '\alpha_{\Omega}','\beta_{\Omega}', '\thres_{\Omega}'}; % DynamicOmega2Model
 % transform{7} = {'sigmoid', 'exp', '@(x) x', 'sigmoid', 'exp', 'scaledSigmoid'};

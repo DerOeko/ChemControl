@@ -1,5 +1,5 @@
 function [hc_d,lc_d,yc_d] = extractControlTypeData(data)
-nSub = size(data, 1);
+nSub = numel(data);
 %% Extracting subsets of data
 hc_d = {};
 lc_d = {};

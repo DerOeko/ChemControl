@@ -71,7 +71,7 @@ end
 %% 02) SIMULATE
 %% Schedules
 
-nRuns = 100;
+nRuns = 1;
 nTrials = 80;
 nBlocks = 16;
 nStates = 4;
@@ -180,7 +180,12 @@ omegas21 = cell(nSchedules, 1);
 
 
 selMods = 1:nMod;
+% Define the models that have omega as a parameter
+modelsWithOmega = [9, 10, 11, 12, 13, 16, 17];
+nModelsWithOmega = length(modelsWithOmega);
 
+% Preallocate cell arrays for omega data for specific models
+omegas = cell(nModelsWithOmega, 1);
 % 02b) Run simulation and plot
 for iMod = selMods
 
@@ -188,109 +193,13 @@ for iMod = selMods
     for iRun = 1:nRuns
         subj = sim_subj(nBlocks, nTrials);
         out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
-        % if iMod >= 7 && iMod <= 21
-        %     % Store omegas for models 6 to 21
-        %     schedule_idx = subj.selected_schedule_idx;
-        %     reshaped_omegas = reshape(out.omegas', [nTrials*nBlocks, 1]);
-        % 
-        %     if iMod == 6
-        %         if isempty(omegas6{schedule_idx})
-        %             omegas6{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas6{schedule_idx} = [omegas6{schedule_idx}, reshaped_omegas];
-        %         end
-        %     elseif iMod == 7
-        %         if isempty(omegas7{schedule_idx})
-        %             omegas7{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas7{schedule_idx} = [omegas7{schedule_idx}, reshaped_omegas];
-        %         end            
-        %     elseif iMod == 8
-        %         if isempty(omegas8{schedule_idx})
-        %             omegas8{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas8{schedule_idx} = [omegas8{schedule_idx}, reshaped_omegas];
-        %         end            
-        %     elseif iMod == 9
-        %         if isempty(omegas9{schedule_idx})
-        %             omegas9{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas9{schedule_idx} = [omegas9{schedule_idx}, reshaped_omegas];
-        %         end            
-        %     elseif iMod == 10
-        %         if isempty(omegas10{schedule_idx})
-        %             omegas10{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas10{schedule_idx} = [omegas10{schedule_idx}, reshaped_omegas];
-        %         end            
-        %     elseif iMod == 11
-        %         if isempty(omegas11{schedule_idx})
-        %             omegas11{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas11{schedule_idx} = [omegas11{schedule_idx}, reshaped_omegas];
-        %         end            
-        %     elseif iMod == 12
-        %         if isempty(omegas12{schedule_idx})
-        %             omegas12{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas12{schedule_idx} = [omegas12{schedule_idx}, reshaped_omegas];
-        %         end            
-        %     elseif iMod == 13
-        %         if isempty(omegas13{schedule_idx})
-        %             omegas13{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas13{schedule_idx} = [omegas13{schedule_idx}, reshaped_omegas];
-        %         end            
-        %     elseif iMod == 14
-        %         if isempty(omegas14{schedule_idx})
-        %             omegas14{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas14{schedule_idx} = [omegas14{schedule_idx}, reshaped_omegas];
-        %         end
-        %     elseif iMod == 15
-        %         if isempty(omegas15{schedule_idx})
-        %             omegas15{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas15{schedule_idx} = [omegas15{schedule_idx}, reshaped_omegas];
-        %         end
-        %     elseif iMod == 16
-        %         if isempty(omegas16{schedule_idx})
-        %             omegas16{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas16{schedule_idx} = [omegas16{schedule_idx}, reshaped_omegas];
-        %         end
-        %     elseif iMod == 17
-        %         if isempty(omegas17{schedule_idx})
-        %             omegas17{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas17{schedule_idx} = [omegas17{schedule_idx}, reshaped_omegas];
-        %         end
-        %     elseif iMod == 18
-        %         if isempty(omegas18{schedule_idx})
-        %             omegas18{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas18{schedule_idx} = [omegas18{schedule_idx}, reshaped_omegas];
-        %         end
-        %     elseif iMod == 19
-        %         if isempty(omegas19{schedule_idx})
-        %             omegas19{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas19{schedule_idx} = [omegas19{schedule_idx}, reshaped_omegas];
-        %         end
-        %     elseif iMod == 20
-        %         if isempty(omegas20{schedule_idx})
-        %             omegas20{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas20{schedule_idx} = [omegas20{schedule_idx}, reshaped_omegas];
-        %         end
-        %     elseif iMod == 21
-        %         if isempty(omegas21{schedule_idx})
-        %             omegas21{schedule_idx} = reshaped_omegas;
-        %         else
-        %             omegas21{schedule_idx} = [omegas21{schedule_idx}, reshaped_omegas];
-        %         end
-        %     end
-        % end
+        oIdx = find(modelsWithOmega == iMod);
+        % Collect omegas if they are a field in the output
+        if isfield(out, 'omegas')
+            schedule_idx = 1; % Focus only on the first schedule
+            reshaped_omegas = reshape(out.omegas', [nTrials * nBlocks, 1]);
+            omegas{oIdx} = [omegas{oIdx}; reshaped_omegas]; % Append to the cell array directly
+        end
 
       % Directly store results in the preallocated arrays
         allHCcell{iRun} = out.HCcell;
@@ -317,95 +226,32 @@ for iMod = selMods
     plotLearningCurves(YCcell, sprintf("M%02d", iMod), fig3);
 end
 
-% Initialize cell arrays for average Omegas
-averageOmegas6 = cell(nSchedules, 1);
-averageOmegas7 = cell(nSchedules, 1);
-averageOmegas8 = cell(nSchedules, 1);
-averageOmegas9 = cell(nSchedules, 1);
-averageOmegas10 = cell(nSchedules, 1);
-averageOmegas11 = cell(nSchedules, 1);
-averageOmegas12 = cell(nSchedules, 1);
-averageOmegas13 = cell(nSchedules, 1);
-averageOmegas14 = cell(nSchedules, 1);
-averageOmegas15 = cell(nSchedules, 1);
-averageOmegas16 = cell(nSchedules, 1);
-averageOmegas17 = cell(nSchedules, 1);
-averageOmegas18 = cell(nSchedules, 1);
-averageOmegas19 = cell(nSchedules, 1);
-averageOmegas20 = cell(nSchedules, 1);
-averageOmegas21 = cell(nSchedules, 1);
-
-for schedule_idx = 1:nSchedules
-    if ~isempty(omegas6{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas6{schedule_idx} = mean(omegas6{schedule_idx}, 2);
-    end
-    if ~isempty(omegas7{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas7{schedule_idx} = mean(omegas7{schedule_idx}, 2);
-    end
-    if ~isempty(omegas8{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas8{schedule_idx} = mean(omegas8{schedule_idx}, 2);
-    end
-    if ~isempty(omegas9{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas9{schedule_idx} = mean(omegas9{schedule_idx}, 2);
-    end
-    if ~isempty(omegas10{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas10{schedule_idx} = mean(omegas10{schedule_idx}, 2);
-    end
-    if ~isempty(omegas11{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas11{schedule_idx} = mean(omegas11{schedule_idx}, 2);
-    end
-    if ~isempty(omegas12{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas12{schedule_idx} = mean(omegas12{schedule_idx}, 2);
-    end
-    if ~isempty(omegas13{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas13{schedule_idx} = mean(omegas13{schedule_idx}, 2);
-    end
-    if ~isempty(omegas14{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas14{schedule_idx} = mean(omegas14{schedule_idx}, 2);
-    end
-    if ~isempty(omegas15{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas15{schedule_idx} = mean(omegas15{schedule_idx}, 2);
-    end
-    if ~isempty(omegas16{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas16{schedule_idx} = mean(omegas16{schedule_idx}, 2);
-    end
-    if ~isempty(omegas17{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas17{schedule_idx} = mean(omegas17{schedule_idx}, 2);
-    end
-    if ~isempty(omegas18{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas18{schedule_idx} = mean(omegas18{schedule_idx}, 2);
-    end
-    if ~isempty(omegas19{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas19{schedule_idx} = mean(omegas19{schedule_idx}, 2);
-    end
-    if ~isempty(omegas20{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas20{schedule_idx} = mean(omegas20{schedule_idx}, 2);
-    end
-    if ~isempty(omegas21{schedule_idx})
-        % Average across columns for schedule_idx
-        averageOmegas21{schedule_idx} = mean(omegas21{schedule_idx}, 2);
+% Average the omegas across runs for each model
+averageOmegas = cell(size(omegas));
+for i = 1:length(omegas)
+    if ~isempty(omegas{i})
+        averageOmegas{i} = mean(omegas{i}, 2); % Average across columns
     end
 end
 
-% Plot the average Omegas
-figure(fig10);
-plotOmegas([averageOmegas6, averageOmegas7, averageOmegas8, averageOmegas9, averageOmegas10, averageOmegas11, averageOmegas12, averageOmegas13, averageOmegas14, averageOmegas15, averageOmegas16, averageOmegas17, averageOmegas18, averageOmegas19, averageOmegas20, averageOmegas21], cPs, fig10);
+% % Plot the average Omegas
+% figure(fig10);
+% plotOmegas([averageOmegas6, averageOmegas7, averageOmegas8, averageOmegas9, averageOmegas10, averageOmegas11, averageOmegas12, averageOmegas13, averageOmegas14, averageOmegas15, averageOmegas16, averageOmegas17, averageOmegas18, averageOmegas19, averageOmegas20, averageOmegas21], cPs, fig10);
 
+% Plot the average Omegas for the first schedule
+figure;
+hold on;
+colors = lines(nModelsWithOmega); % Get distinct colors for plotting
+for i = 1:length(averageOmegas)
+    if ~isempty(averageOmegas{i})
+        plot(averageOmegas{i}, 'Color', colors(i,:), 'DisplayName', sprintf('Model %d', modelsWithOmega(i)));
+    end
+end
+hold off;
+legend show;
+title('Average Omegas for Selected Models on the First Schedule');
+xlabel('Trial');
+ylabel('Omega value');
 %% 3 Model inventor
 % Quick turns between inventing, fitting and plotting. Meant to help with
 % inventing new models quicker. 

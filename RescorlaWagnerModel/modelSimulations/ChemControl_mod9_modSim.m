@@ -40,10 +40,10 @@ function [out] = ChemControl_mod9_modSim(parameters, subj)
     HCarr = cell(B/2, S); % Average reward rate in high control blocks over time
     LCarr = cell(B/4, S);
     YCarr = cell(B/4, S);
-
     actions = zeros(B, T);
     outcomes = zeros(B, T);
-    
+    omegas = zeros(B, T);
+
     q0 = [0 0 0 0];
     hc = 0;
     lc = 0;
@@ -134,6 +134,8 @@ function [out] = ChemControl_mod9_modSim(parameters, subj)
         arr = 0;
         omega = 1/(1+exp(-beta*(Omega-thres)));
         for t = 1:T
+            omegas(b, t) = omega;
+
             s = stimuli(b, t);
             isWinState = mod(s, 2);
             randHC = randHCs(b, t); % outcome matters (1, 0, 2)
@@ -462,6 +464,7 @@ function [out] = ChemControl_mod9_modSim(parameters, subj)
     out.plotReward = plotReward;
     out.arr = averageRewardRate;
     out.alr = averageLossRate;
+    out.omegas = omegas;
     out.probShiftAfterLoss_HC = probShiftAfterLoss_HC;
     out.probShiftAfterLoss_LC = probShiftAfterLoss_LC;
     out.probShiftAfterLoss_YC = probShiftAfterLoss_YC;

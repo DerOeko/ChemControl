@@ -1,9 +1,21 @@
 function figHandle = plotStayAnalysis(data, figHandle)
+    arguments
+        data;
+        figHandle = [];
+    end
+    
+    if isempty(figHandle)
+        figHandle = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+    else
+        figure(figHandle);
+    end
+    
 nSub = size(data, 1);
 nBlocks = size(data{1}.stimuli, 1);
 nTrials = size(data{1}.stimuli, 2);
 [hc_d, lc_d, yc_d] = extractControlTypeData(data);
-dataTypes = {'hc_d', 'lc_d', 'yc_d'};
+lc_d = horzcat(lc_d, yc_d);
+dataTypes = {'hc_d', 'lc_d'};
 numTypes = length(dataTypes);
 
 % Initialize P_stay for each control type
@@ -94,30 +106,11 @@ for dType = 1:numTypes
     end
 end
 
-% Display mean results for each control type
-for dType = 1:numTypes
-    fprintf('%s:\n', dataTypes{dType});
-    fprintf('Mean Go-Reward: %.2f\n', mean_P_stay_prob(dType, 1));
-    fprintf('Mean Go-Punish: %.2f\n', mean_P_stay_prob(dType, 2));
-    fprintf('Mean NoGo-Reward: %.2f\n', mean_P_stay_prob(dType, 3));
-    fprintf('Mean NoGo-Punish: %.2f\n', mean_P_stay_prob(dType, 4));
-end
-
 % Plot the results as a bar plot with individual data points and error bars
-figure;
 hold on;
 bar(mean_P_stay_prob', 'grouped');
-xticklabels({'Go-Reward', '',  'Go-Punish', '', 'NoGo-Reward',  '',  'NoGo-Punish'});
+xticklabels({'Go-Reward', 'Go-Punish', 'NoGo-Reward',  'NoGo-Punish'});
 yline(0.5, 'Color', '#080808', 'LineStyle', '--');
-
-% Add individual subject data points
-for dType = 1:numTypes
-    for j = 1:4
-        dataMatrix = cell2mat(P_stay_prob(:, j, dType));
-        x = repmat(j + (dType-1)*0.22 - 0.22, size(dataMatrix)); % Adjust the position to align with bars
-        scatter(x, dataMatrix, 'filled', 'MarkerFaceColor', 'k', 'MarkerEdgeColor', 'k', 'MarkerFaceAlpha', 0.2, 'MarkerEdgeAlpha', 0.3);
-    end
-end
 
 % Add error bars
 for dType = 1:numTypes
@@ -126,7 +119,7 @@ for dType = 1:numTypes
     end
 end
 
-legend('high control', 'low control', 'yoked control', 'Location', 'Best');
+legend('high control', 'low control', '', 'Location', 'Best');
 xlabel('Condition');
 ylabel('Mean Probability of Staying');
 hold off;

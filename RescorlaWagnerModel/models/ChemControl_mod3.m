@@ -1,5 +1,7 @@
 function [loglik] = ChemControl_mod3(parameters,subj)
 
+% Standard Rescorla Wagner model with rho feedback sensitivity + goBias +
+% fixed Pavlov
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
