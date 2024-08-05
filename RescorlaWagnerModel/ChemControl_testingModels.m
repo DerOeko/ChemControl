@@ -68,10 +68,33 @@ for iMod = 1:nMod
     groupParams{iMod} = cbm.output.group_mean{:};
 end
 
+%% 01c) Check whether modSim and mod produce same loglikehood for same data.
+% for iMod = 1:nMod
+%     subj = sim_subj(8, 40);  % Simulate subject data
+%     % Execute model simulation and retrieve output
+%     out = eval(sprintf("ChemControl_mod%d_modSim(groupParams{iMod}, subj)", iMod));
+%     loglik1 = out.loglik;  % Loglikelihood from simulation
+% 
+%     % Assign simulated actions back to subject for model re-evaluation
+%     subj.actions = out.actions;
+%     subj.outcomes = out.outcomes;
+% 
+%     % Calculate loglikelihood with the standard model function
+%     loglik2 = eval(sprintf("ChemControl_mod%d(groupParams{iMod}, subj)", iMod));
+% 
+%     % Check if the loglikelihood values are the same
+%     if loglik1 == loglik2
+%         fprintf("Model %02d is producing the same loglikelihood for the same data and parameters.\n", iMod);
+%     else
+%         fprintf("Model %02d is not producing the same loglikelihood! Expected %f, got %f.\n", iMod, loglik1, loglik2);
+%     end
+% end
+
+
 %% 02) SIMULATE
 %% Schedules
 
-nRuns = 1;
+nRuns = 100;
 nTrials = 80;
 nBlocks = 16;
 nStates = 4;
@@ -179,7 +202,7 @@ omegas21 = cell(nSchedules, 1);
 
 
 
-selMods = 1:nMod;
+selMods = 9:nMod;
 % Define the models that have omega as a parameter
 modelsWithOmega = [9, 10, 11, 12, 13, 16, 17];
 nModelsWithOmega = length(modelsWithOmega);
@@ -195,10 +218,9 @@ for iMod = selMods
         out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
         oIdx = find(modelsWithOmega == iMod);
         % Collect omegas if they are a field in the output
-        if isfield(out, 'omegas')
-            schedule_idx = 1; % Focus only on the first schedule
+        if isfield(out, 'omegas') && subj.selected_schedule_idx == 1 
             reshaped_omegas = reshape(out.omegas', [nTrials * nBlocks, 1]);
-            omegas{oIdx} = [omegas{oIdx}; reshaped_omegas]; % Append to the cell array directly
+            omegas{oIdx} = [omegas{oIdx} reshaped_omegas]; % Append to the cell array directly
         end
 
       % Directly store results in the preallocated arrays
@@ -234,24 +256,25 @@ for i = 1:length(omegas)
     end
 end
 
+plotOmegas(averageOmegas, cPs, modelsWithOmega)
 % % Plot the average Omegas
 % figure(fig10);
 % plotOmegas([averageOmegas6, averageOmegas7, averageOmegas8, averageOmegas9, averageOmegas10, averageOmegas11, averageOmegas12, averageOmegas13, averageOmegas14, averageOmegas15, averageOmegas16, averageOmegas17, averageOmegas18, averageOmegas19, averageOmegas20, averageOmegas21], cPs, fig10);
 
 % Plot the average Omegas for the first schedule
-figure;
-hold on;
-colors = lines(nModelsWithOmega); % Get distinct colors for plotting
-for i = 1:length(averageOmegas)
-    if ~isempty(averageOmegas{i})
-        plot(averageOmegas{i}, 'Color', colors(i,:), 'DisplayName', sprintf('Model %d', modelsWithOmega(i)));
-    end
-end
-hold off;
-legend show;
-title('Average Omegas for Selected Models on the First Schedule');
-xlabel('Trial');
-ylabel('Omega value');
+% figure;
+% hold on;
+% colors = lines(nModelsWithOmega); % Get distinct colors for plotting
+% for i = 1:length(averageOmegas)
+%     if ~isempty(averageOmegas{i})
+%         plot(averageOmegas{i}, 'Color', colors(i,:), 'DisplayName', sprintf('Model %d', modelsWithOmega(i)));
+%     end
+% end
+% hold off;
+% legend show;
+% title('Average Omegas for Selected Models on the First Schedule');
+% xlabel('Trial');
+% ylabel('Omega value');
 %% 3 Model inventor
 % Quick turns between inventing, fitting and plotting. Meant to help with
 % inventing new models quicker. 

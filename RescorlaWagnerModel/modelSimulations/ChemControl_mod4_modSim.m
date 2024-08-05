@@ -54,6 +54,7 @@ function [out] = ChemControl_mod4_modSim(parameters, subj)
     w_g = q0;
     w_ng = q0;
     sv = [0.5 -0.5 0.5 -0.5];
+    loglik = 0;
 
     isHC = 1;
     for t = 1:T
@@ -78,8 +79,12 @@ function [out] = ChemControl_mod4_modSim(parameters, subj)
         sv(s) = sv(s) + ep * (rho * o - sv(s));
 
         if a==1
+            loglik = loglik + log(p1 + eps);
+
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
+            loglik = loglik + log((1-p1) + eps);
+
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
 
@@ -156,9 +161,13 @@ function [out] = ChemControl_mod4_modSim(parameters, subj)
             sv(s) = sv(s) + ep * (rho * o - sv(s));
 
             if a==1
+                loglik = loglik + log(p1 + eps);
+
                 pe = rho * o - q_g(s);
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
             elseif a==2
+                loglik = loglik + log((1-p1) + eps);
+
                 pe = rho * o - q_ng(s);
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
             end
@@ -457,5 +466,6 @@ function [out] = ChemControl_mod4_modSim(parameters, subj)
     out.weightedProbShiftAfterLoss_HC = weightedProbShiftAfterLoss_HC;
     out.weightedProbShiftAfterLoss_LC = weightedProbShiftAfterLoss_LC;
     out.weightedProbShiftAfterLoss_YC = weightedProbShiftAfterLoss_YC;
+    out.loglik = loglik;
 
 end

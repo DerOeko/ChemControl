@@ -47,7 +47,7 @@ for b = 1:B
     q_g = initQ;
     q_ng = initQ;
     sv = [0.5 -0.5 0.5 -0.5];
-    omega = 1/(1+exp(-beta*(-thres)));
+    omega = 1/(1+exp(-beta*(Omega-thres)));
     for t=1:T
         a = actions(b, t);
         o = outcomes(b, t);
@@ -57,8 +57,6 @@ for b = 1:B
         w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
-
-        v_pe = o - sv(s);
         
         if a==1
             loglik = loglik + log(p1 + eps);
@@ -72,7 +70,7 @@ for b = 1:B
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
 
-        Omega = Omega + alpha*(v_pe - q_pe - Omega);
+        Omega = Omega + alpha*(q_pe - Omega);
         omega = 1/(1+exp(-beta*(Omega-thres)));
     end
 end

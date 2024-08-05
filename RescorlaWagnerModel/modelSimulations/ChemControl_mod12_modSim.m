@@ -62,6 +62,7 @@ function [out] = ChemControl_mod12_modSim(parameters, subj)
     Omega = 0;
     omega = omega_init;
     isHC = 1;
+    loglik = 0;
     for t = 1:T
         s = cali_stimuli(t);
         randHC = cali_randHC(t);
@@ -82,10 +83,14 @@ function [out] = ChemControl_mod12_modSim(parameters, subj)
         v_pe = o - sv(s);
 
         if a==1
+            loglik = loglik + log(p1 + eps);
+
             q_pe = o-q_g(s);
 
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
+            loglik = loglik + log((1-p1) + eps);
+
             q_pe = o-q_ng(s);
 
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
@@ -169,10 +174,14 @@ function [out] = ChemControl_mod12_modSim(parameters, subj)
             v_pe = o - sv(s);
     
             if a==1
+                loglik = loglik + log(p1 + eps);
+
                 q_pe = o-q_g(s);
                 pe = rho * o - q_g(s);
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
             elseif a==2
+                loglik = loglik + log((1-p1) + eps);
+
                 q_pe = o-q_ng(s);
                 pe = rho * o - q_ng(s);
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
@@ -475,5 +484,6 @@ function [out] = ChemControl_mod12_modSim(parameters, subj)
     out.weightedProbShiftAfterLoss_HC = weightedProbShiftAfterLoss_HC;
     out.weightedProbShiftAfterLoss_LC = weightedProbShiftAfterLoss_LC;
     out.weightedProbShiftAfterLoss_YC = weightedProbShiftAfterLoss_YC;
+    out.loglik = loglik;
 
 end
