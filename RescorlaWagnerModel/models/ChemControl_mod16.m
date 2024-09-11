@@ -1,6 +1,7 @@
 function [loglik] = ChemControl_mod16(parameters,subj)
 
-%  M09 + ARR: Dynamic Omega, fixed pavlov + ARR
+% Dynamic Omega, dynamic pavlov, without pavlov on the nogo side, with
+% scaled pes
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
@@ -9,7 +10,6 @@ goBias = parameters(3);
 alpha = sigmoid(parameters(4));
 beta = exp(parameters(5));
 thres = scaledSigmoid(parameters(6));
-alpha_lr = sigmoid(parameters(7));
 % ----------------------------------------------------------------------- %
 
 %% Unpack data:
@@ -37,7 +37,7 @@ initQ = [0 0 0 0];
 loglik = 0;
 
 % Store actions, outcomes and stimuli
-mu = 0;
+
 % ----------------------------------------------------------------------- %
 %% Calculating log likelihood for action sequence with this model:
 Omega = 0;
@@ -55,23 +55,23 @@ for b = 1:B
         s = states(b, t);
 
         w_g(s) = omega * q_g(s) + goBias + (1-omega) * sv(s);
-        w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
+        w_ng(s) = omega * q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
-        mu = mu + alpha_lr*(o-mu);
 
-        v_pe = o - sv(s) + mu;
-        
+        v_pe = rho*o - sv(s);
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
+
         if a==1
             loglik = loglik + log(p1 + eps);
-            q_pe = o-q_g(s) + mu;
+            q_pe = rho*o-q_g(s);
 
-            q_g(s) = q_g(s) + ep * (rho * o - q_g(s) + mu);
+            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
             loglik = loglik + log(p2 + eps);
 
-            q_pe = o-q_ng(s) + mu;
-            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s) + mu);
+            q_pe = rho*o-q_ng(s);
+            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
 
         Omega = Omega + alpha*(v_pe - q_pe - Omega);

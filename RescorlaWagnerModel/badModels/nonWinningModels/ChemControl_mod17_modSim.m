@@ -1,4 +1,4 @@
-function [out] = ChemControl_mod22_modSim(parameters, subj)
+function [out] = ChemControl_mod17_modSim(parameters, subj)
     % Standard Q-learning model with delta learning rule.
     
     % ----------------------------------------------------------------------- %
@@ -10,7 +10,6 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
     beta = exp(parameters(5));
     thres = scaledSigmoid(parameters(6));
     alpha_lr = sigmoid(parameters(7));
-
     % ----------------------------------------------------------------------- %
     %% Unpack data:
 
@@ -62,8 +61,10 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
     Omega = 0;
     omega = 1/(1+exp(-beta*(Omega-thres)));
     isHC = 1;
+    mu = 0;
+
     loglik = 0;
-    mu =0;
+
     for t = 1:T
         s = cali_stimuli(t);
         randHC = cali_randHC(t);
@@ -71,7 +72,7 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
         isRewarded = cali_randRewards(t);
 
         w_g(s) = omega * q_g(s) + goBias + (1-omega)*sv(s);
-        w_ng(s) = omega * q_ng(s);
+        w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
         a = returnAction(p1);
@@ -81,26 +82,24 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
         elseif ~mod(s, 2) && o == 0
             o = 1;
         end
-        mu = mu + alpha_lr*(rho*o-mu);
-        v_pe = rho*o - sv(s)+mu;
-        sv(s) = sv(s) + ep * (rho * o - sv(s)+mu);
+        mu = mu + alpha_lr*(o-mu);
+
+        v_pe = o - sv(s);
 
         if a==1
             loglik = loglik + log(p1 + eps);
 
-            q_pe = rho*o-q_g(s)+mu;
+            q_pe = o-q_g(s);
 
-            q_g(s) = q_g(s) + ep * (rho * o - q_g(s)+mu);
-            p_explore = 1-p1;
+            q_g(s) = q_g(s) + ep * (rho * o - q_g(s) + mu);
         elseif a==2
             loglik = loglik + log((1-p1) + eps);
 
-            q_pe = rho*o-q_ng(s)+mu;
+            q_pe = o-q_ng(s);
 
-            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s)+mu);
-            p_explore = p1;
+            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s) + mu);
         end
-        Omega = Omega + (alpha*p_explore)*(v_pe - q_pe - Omega);
+        Omega = Omega + alpha*(v_pe - q_pe - Omega);
         omega = 1/(1+exp(-beta*(Omega-thres)));
 
         counter = updateRewardLossCounter(s, o);
@@ -162,7 +161,7 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
             end
                 
             w_g(s) = omega * q_g(s) + goBias + (1-omega)*sv(s);
-            w_ng(s) = omega * q_ng(s);
+            w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
             p1 = stableSoftmax(w_g(s), w_ng(s));
 
             a = returnAction(p1);
@@ -175,29 +174,26 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
             elseif ~mod(s, 2) && o == 0
                 o = 1;
             end
-            mu = mu + alpha_lr*(rho*o-mu);
+            mu = mu + alpha_lr*(o-mu);
 
-            v_pe = rho*o - sv(s)+mu;
-            sv(s) = sv(s) + ep * (rho * o - sv(s)+mu);
-
+            v_pe = o - sv(s);
+    
             if a==1
                 loglik = loglik + log(p1 + eps);
 
-                q_pe = rho*o-q_g(s)+mu;
+                q_pe = o-q_g(s);
                 pe = rho * o - q_g(s);
-                q_g(s) = q_g(s) + ep * (rho * o - q_g(s)+mu);
-                p_explore = 1-p1;
+                q_g(s) = q_g(s) + ep * (rho * o - q_g(s) + mu);
             elseif a==2
                 loglik = loglik + log((1-p1) + eps);
 
-                q_pe = rho*o-q_ng(s)+mu;
+                q_pe = o-q_ng(s);
                 pe = rho * o - q_ng(s);
-                q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s)+mu);
-                p_explore = p1;
+                q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s) + mu);
             end
             
             arr = arr + (o - arr);
-            Omega = Omega + (alpha*p_explore)*(v_pe - q_pe - Omega);
+            Omega = Omega + alpha*(v_pe - q_pe - Omega);
             omega = 1/(1+exp(-beta*(Omega-thres)));
             if isHC
                 HCcell{hc, s}(end+1) = p1;

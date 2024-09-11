@@ -36,6 +36,7 @@ fprintf('Loaded inputFile with %d subjects\n', size(data, 2));
 
 nMod = length(dir(fullfile(dirs.models, "*.m")));
 dataType = 'allData';
+
 %% 01) LOAD AND SAVE:
 %% 01a) Alternative A: Load model fitted with LAP:
 
@@ -92,9 +93,10 @@ end
 
 
 %% 02) SIMULATE
-%% Schedules
 
-nRuns = 100;
+%% 02a) Run settings
+%% Schedules, runs, trials, blocks, states, and controllability settings
+nRuns = 150;
 nTrials = 80;
 nBlocks = 16;
 nStates = 4;
@@ -125,8 +127,6 @@ for iSchedule = 1:nSchedules
     end
 end
 
-%% 02a) Run settings
-
 fig1 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig1)
 sgtitle(sprintf("Learning curves for different models in high control trials for %i runs, %i blocks, %i trials", nRuns, nBlocks, nTrials))
@@ -139,124 +139,122 @@ fig3 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
 figure(fig3)
 sgtitle(sprintf("Learning curves for different models in yoked low control trials for %i runs, %i blocks, %i trials", nRuns, nBlocks, nTrials))
 
-% fig4 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-% figure(fig4)
-% sgtitle("Weighted Probability of Shifting after a Loss vs. Number of Consecutive Wins in High Control")
-% 
-% fig5 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-% figure(fig5);
-% sgtitle("Weighted Probability of Shifting after a Loss vs. Number of Consecutive Wins in Low Non-Yoked Control")
-% 
-% fig6 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-% figure(fig6);
-% sgtitle("Weighted Probability of Shifting after a Loss vs. Number of Consecutive Wins in Low Yoked Control")
-% 
-% fig7 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-% figure(fig7)
-% sgtitle(sprintf("Prediction errors for different models in high control trials for %i runs", nRuns))
-% 
-% fig8 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-% figure(fig8)
-% sgtitle(sprintf("Prediction errors for different models in low control trials for %i runs", nRuns))
-% 
-% fig9 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-% figure(fig9)
-% sgtitle(sprintf("Prediction errors for different models in yoked low control trials for %i runs", nRuns))
-
-fig10 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-figure(fig10);
-
-% fig11 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-% figure(fig11)
-% sgtitle(sprintf("Average reward rate in high control trials for %i runs", nRuns))
-% 
-% fig12 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-% figure(fig12)
-% sgtitle(sprintf("Average reward rate in low control trials for %i runs", nRuns))
-% 
-% fig13 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
-% figure(fig13)
-% sgtitle(sprintf("Average reward rate in yoked low control trials for %i runs", nRuns))
+fig4 = figure('Units', 'normalized', 'Position', [0.1 0.1 0.8 0.8]);
+figure(fig4)
+sgtitle(sprintf("Proportion of staying with the same action when encountering the same stimulus as a function of previous action and previous received outcome"))
 
 % Preallocate cell arrays for all outputs
 allHCcell = cell(nRuns, 1);
 allLCcell = cell(nRuns, 1);
 allYCcell = cell(nRuns, 1);
 
-omegas6 = cell(nSchedules, 1);
-omegas7 = cell(nSchedules, 1);
-omegas8 = cell(nSchedules, 1);
-omegas9 = cell(nSchedules, 1);
-omegas10 = cell(nSchedules, 1);
-omegas11 = cell(nSchedules, 1);
-omegas12 = cell(nSchedules, 1);
-omegas13 = cell(nSchedules, 1);
-omegas14 = cell(nSchedules, 1);
-omegas15 = cell(nSchedules, 1);
-omegas16 = cell(nSchedules, 1);
-omegas17 = cell(nSchedules, 1);
-omegas18 = cell(nSchedules, 1);
-omegas19 = cell(nSchedules, 1);
-omegas20 = cell(nSchedules, 1);
-omegas21 = cell(nSchedules, 1);
+% Preallocate cell arrays for all actions
+allActions = cell(nRuns, 1);
 
+% Preallocate cell arrays for all outcomes
+allOutcomes = cell(nRuns, 1);
 
+% Preallocate cell arrays for all stimuli
+allStimuli = cell(nRuns, 1);
 
-selMods = 9:nMod;
-% Define the models that have omega as a parameter
-modelsWithOmega = [9, 10, 11, 12, 13, 16, 17];
-nModelsWithOmega = length(modelsWithOmega);
-
-% Preallocate cell arrays for omega data for specific models
-omegas = cell(nModelsWithOmega, 1);
+selMods = [14, 18, 21, 22:32];
+omegas = {};
+i = 0;
+j= 0;
 % 02b) Run simulation and plot
 for iMod = selMods
-
     parameters = groupParams{iMod};
+    i = i+1;
+    % Test
+    subj = sim_subj(nBlocks, nTrials);
+    out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
+    if isfield(out, 'omegas')
+        j= j + 1;
+        modelsWithOmegas(j) = sprintf("M%02d", iMod);
+    end
+    
     for iRun = 1:nRuns
         subj = sim_subj(nBlocks, nTrials);
         out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
-        oIdx = find(modelsWithOmega == iMod);
         % Collect omegas if they are a field in the output
-        if isfield(out, 'omegas') && subj.selected_schedule_idx == 1 
+        if isfield(out, 'omegas') && subj.selected_schedule_idx == 1
             reshaped_omegas = reshape(out.omegas', [nTrials * nBlocks, 1]);
-            omegas{oIdx} = [omegas{oIdx} reshaped_omegas]; % Append to the cell array directly
+            if length(omegas) < i
+                omegas{i} = reshaped_omegas; % Initialize the cell if it doesn't exist
+            else
+                omegas{i} = [omegas{i} reshaped_omegas]; % Append to the existing cell
+            end
         end
 
       % Directly store results in the preallocated arrays
         allHCcell{iRun} = out.HCcell;
         allLCcell{iRun} = out.LCcell;
         allYCcell{iRun} = out.YCcell;
-    
+
+        allStayAnalysis(iRun, :, :) = calcSummaryStayAnalysis(out);
     end
 
     % Concatenate all results after the loop
     HCcell = vertcat(allHCcell{:});
     LCcell = vertcat(allLCcell{:});
     YCcell = vertcat(allYCcell{:});
-  
+    
+    % Initialize variables to store sum and sum of squares
+    sumStayAnalysis = zeros(size(allStayAnalysis, 2), size(allStayAnalysis, 3));
+    sumSqStayAnalysis = zeros(size(allStayAnalysis, 2), size(allStayAnalysis, 3));
+    
+    % Loop over runs to calculate the sum and sum of squares
+    for iRun = 1:nRuns
+        sumStayAnalysis = sumStayAnalysis + squeeze(allStayAnalysis(iRun, :, :));
+        sumSqStayAnalysis = sumSqStayAnalysis + squeeze(allStayAnalysis(iRun, :, :)).^2;
+    end
+    
+    % Calculate the mean
+    avgStayAnalysis = sumStayAnalysis / nRuns;
+    
+    % Calculate the standard error (assuming normal distribution)
+    stderrStayAnalysis = sqrt((sumSqStayAnalysis - (sumStayAnalysis.^2 / nRuns)) / (nRuns - 1));
+    stderrStayAnalysis = stderrStayAnalysis / sqrt(nRuns);  % Standard error
+    
+
+    % Plot the learning curves for each model
     figure(fig1);
-    subplot(3, ceil(nMod/3), iMod);
+    subplot(3, ceil(length(selMods)/3), i);
     plotLearningCurves(HCcell, sprintf("M%02d", iMod), fig1);
     
     figure(fig2);
-    subplot(3, ceil(nMod/3), iMod);
+    subplot(3, ceil(length(selMods)/3), i);
     plotLearningCurves(LCcell, sprintf("M%02d", iMod), fig2);
     
     figure(fig3)
-    subplot(3, ceil(nMod/3), iMod);
+    subplot(3, ceil(length(selMods)/3), i);
     plotLearningCurves(YCcell, sprintf("M%02d", iMod), fig3);
+
+    figure(fig4)
+    subplot(3, ceil(length(selMods)/3), i);
+    plotSummaryStayAnalysis(avgStayAnalysis, stderrStayAnalysis, sprintf("M%02d", iMod), fig4);
 end
 
-% Average the omegas across runs for each model
-averageOmegas = cell(size(omegas));
+% Initialize an empty cell array for average omegas
+averageOmegas = {};
+
+% Counter to track the index in averageOmegas
+index = 1;
+
+% Loop through omegas to calculate the average for non-empty cells
 for i = 1:length(omegas)
     if ~isempty(omegas{i})
-        averageOmegas{i} = mean(omegas{i}, 2); % Average across columns
+        averageOmegas{index} = mean(omegas{i}, 2); % Average across columns
+        index = index + 1;
     end
 end
 
-plotOmegas(averageOmegas, cPs, modelsWithOmega)
+%% 02c) Plotting
+
+% Plot the average Omegas for the first schedule
+plotOmegas(averageOmegas, cPs, modelsWithOmegas)
+
+
 % % Plot the average Omegas
 % figure(fig10);
 % plotOmegas([averageOmegas6, averageOmegas7, averageOmegas8, averageOmegas9, averageOmegas10, averageOmegas11, averageOmegas12, averageOmegas13, averageOmegas14, averageOmegas15, averageOmegas16, averageOmegas17, averageOmegas18, averageOmegas19, averageOmegas20, averageOmegas21], cPs, fig10);

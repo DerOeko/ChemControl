@@ -1,6 +1,7 @@
 function [loglik] = ChemControl_mod20(parameters,subj)
 
-% Dynamic Omega, fixed pavlov without v_pe, q_pe
+% Dynamic Omega, dynamic pavlov, without pavlov on the nogo side,
+% w_rew_info
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
@@ -9,6 +10,7 @@ goBias = parameters(3);
 alpha = sigmoid(parameters(4));
 beta = exp(parameters(5));
 thres = scaledSigmoid(parameters(6));
+w_rew_info = parameters(7);
 % ----------------------------------------------------------------------- %
 
 %% Unpack data:
@@ -47,31 +49,38 @@ for b = 1:B
     q_g = initQ;
     q_ng = initQ;
     sv = [0.5 -0.5 0.5 -0.5];
-    omega = 1/(1+exp(-beta*(Omega-thres)));
     for t=1:T
         a = actions(b, t);
         o = outcomes(b, t);
         s = states(b, t);
+        
+        Xomega = -beta*(w_rew_info*(sv(s)/rho)+(1-w_rew_info)*Omega-thres);
+
+        omega = 1/(1+exp(Xomega));
 
         w_g(s) = omega * q_g(s) + goBias + (1-omega) * sv(s);
-        w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
+        w_ng(s) = omega * q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
-        
+
+        v_pe = o - sv(s);
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
+
         if a==1
             loglik = loglik + log(p1 + eps);
             q_pe = o-q_g(s);
 
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+            p_explore = p2;
         elseif a==2
             loglik = loglik + log(p2 + eps);
 
             q_pe = o-q_ng(s);
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+            p_explore = p1;
         end
 
-        Omega = Omega + alpha*(q_pe - Omega);
-        omega = 1/(1+exp(-beta*(Omega-thres)));
+        Omega = Omega + (alpha*p_explore)*(v_pe-q_pe- Omega);
     end
 end
 end

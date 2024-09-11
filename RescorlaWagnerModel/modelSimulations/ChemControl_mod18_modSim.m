@@ -5,7 +5,9 @@ function [out] = ChemControl_mod18_modSim(parameters, subj)
     %% Retrieve parameters:
     ep = sigmoid(parameters(1));
     rho = exp(parameters(2));
-    alpha_lr = sigmoid(parameters(3));
+    goBias = parameters(3);
+    pi = parameters(4);
+    alpha_lr = sigmoid(parameters(5));
     % ----------------------------------------------------------------------- %
     %% Unpack data:
 
@@ -45,23 +47,25 @@ function [out] = ChemControl_mod18_modSim(parameters, subj)
     hc = 0;
     lc = 0;
     yc = 0;
-    mu = 0;
+    
     %% Run calibration block
     rewardLossCounter = zeros([1, 2]);
     q_g = q0;
     q_ng = q0;
     w_g = q0;
     w_ng = q0;
+    sv = [0.5 -0.5 0.5 -0.5];
+    mu = 0;
+    isHC = 1;
     loglik = 0;
 
-    isHC = 1;
     for t = 1:T
         s = cali_stimuli(t);
         randHC = cali_randHC(t);
         randLC = cali_randLC(t);
         isRewarded = cali_randRewards(t);
 
-        w_g(s) = q_g(s);
+        w_g(s) = q_g(s) + goBias + pi*sv(s);
         w_ng(s) = q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
@@ -72,9 +76,9 @@ function [out] = ChemControl_mod18_modSim(parameters, subj)
         elseif ~mod(s, 2) && o == 0
             o = 1;
         end
+        mu = mu + alpha_lr * (rho*o - mu);
 
-        mu = mu + alpha_lr * (o - mu);
-        if a==1
+        if a==1            
             loglik = loglik + log(p1 + eps);
 
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s) + mu);
@@ -139,7 +143,7 @@ function [out] = ChemControl_mod18_modSim(parameters, subj)
                 isRewarded = avoidedVec(t);
             end
                 
-            w_g(s) = q_g(s);
+            w_g(s) = q_g(s) + goBias + pi*sv(s);
             w_ng(s) = q_ng(s);
             p1 = stableSoftmax(w_g(s), w_ng(s));
 
@@ -153,8 +157,8 @@ function [out] = ChemControl_mod18_modSim(parameters, subj)
                 o = 1;
             end
 
-            mu = mu + alpha_lr * (o - mu);
-
+            mu = mu + alpha_lr * (rho*o - mu);
+            
             if a==1
                 loglik = loglik + log(p1 + eps);
 

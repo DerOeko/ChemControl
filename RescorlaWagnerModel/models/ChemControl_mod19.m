@@ -1,6 +1,7 @@
 function [loglik] = ChemControl_mod19(parameters,subj)
 
-% Dynamic Omega, fixed pavlov, absolute pes + ARR
+% Dynamic Omega, dynamic pavlov, without pavlov on the nogo side, lapse
+% bounds
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
@@ -9,7 +10,7 @@ goBias = parameters(3);
 alpha = sigmoid(parameters(4));
 beta = exp(parameters(5));
 thres = scaledSigmoid(parameters(6));
-alpha_lr = sigmoid(parameters(7));
+lapse_bounds =0.5*sigmoid(parameters(7));
 % ----------------------------------------------------------------------- %
 
 %% Unpack data:
@@ -41,40 +42,41 @@ loglik = 0;
 % ----------------------------------------------------------------------- %
 %% Calculating log likelihood for action sequence with this model:
 Omega = 0;
-mu = 0;
+
 for b = 1:B
     w_g = initQ;
     w_ng = initQ;
     q_g = initQ;
     q_ng = initQ;
     sv = [0.5 -0.5 0.5 -0.5];
-    omega = 1/(1+exp(-beta*(Omega-thres)));
+    omega = lapse_bounds+((1-2*lapse_bounds)/(1+exp(-beta*(Omega-thres))));
     for t=1:T
         a = actions(b, t);
         o = outcomes(b, t);
         s = states(b, t);
 
         w_g(s) = omega * q_g(s) + goBias + (1-omega) * sv(s);
-        w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
+        w_ng(s) = omega * q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
-        mu = mu + alpha_lr* (o-mu);
-        v_pe = o - sv(s) + mu;
-        
+
+        v_pe = o - sv(s);
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
+
         if a==1
             loglik = loglik + log(p1 + eps);
-            q_pe = o-q_g(s) + mu;
+            q_pe = o-q_g(s);
 
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
             loglik = loglik + log(p2 + eps);
 
-            q_pe = o-q_ng(s) + mu;
+            q_pe = o-q_ng(s);
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
 
-        Omega = Omega + alpha*(abs(v_pe)- abs(q_pe) - Omega);
-        omega = 1/(1+exp(-beta*(Omega-thres)));
+        Omega = Omega + alpha*(v_pe - q_pe - Omega);
+        omega=lapse_bounds+((1-2*lapse_bounds)/(1+exp(-beta*(Omega-thres))));
     end
 end
 end

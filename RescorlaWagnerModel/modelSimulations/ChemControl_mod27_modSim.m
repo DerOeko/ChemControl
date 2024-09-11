@@ -1,4 +1,4 @@
-function [out] = ChemControl_mod22_modSim(parameters, subj)
+function [out] = ChemControl_mod27_modSim(parameters, subj)
     % Standard Q-learning model with delta learning rule.
     
     % ----------------------------------------------------------------------- %
@@ -58,7 +58,7 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
     q_ng = q0;
     w_g = q0;
     w_ng = q0;
-    sv = [0.5 -0.5 0.5 -0.5];
+    sv = [0.5 -0.5 0.5 -0.5]*rho;
     Omega = 0;
     omega = 1/(1+exp(-beta*(Omega-thres)));
     isHC = 1;
@@ -72,7 +72,7 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
 
         w_g(s) = omega * q_g(s) + goBias + (1-omega)*sv(s);
         w_ng(s) = omega * q_ng(s);
-        p1 = stableSoftmax(w_g(s), w_ng(s));
+        p1 = stableSoftmax_randexp(w_g(s), w_ng(s), 1-omega);
 
         a = returnAction(p1);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
@@ -143,7 +143,7 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
         q_ng = q0;
         w_g = q0;
         w_ng = q0;
-        sv = [0.5 -0.5 0.5 -0.5];
+        sv = [0.5 -0.5 0.5 -0.5]*rho;
         arr = 0;
         omega = 1/(1+exp(-beta*(Omega-thres)));
         for t = 1:T
@@ -163,7 +163,7 @@ function [out] = ChemControl_mod22_modSim(parameters, subj)
                 
             w_g(s) = omega * q_g(s) + goBias + (1-omega)*sv(s);
             w_ng(s) = omega * q_ng(s);
-            p1 = stableSoftmax(w_g(s), w_ng(s));
+            p1 = stableSoftmax_randexp(w_g(s), w_ng(s), 1-omega);
 
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);

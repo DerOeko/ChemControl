@@ -9,7 +9,7 @@ function [out] = ChemControl_mod19_modSim(parameters, subj)
     alpha = sigmoid(parameters(4));
     beta = exp(parameters(5));
     thres = scaledSigmoid(parameters(6));
-    alpha_lr = sigmoid(parameters(7));
+    lapse_bounds =0.5*sigmoid(parameters(7));
     % ----------------------------------------------------------------------- %
     %% Unpack data:
 
@@ -59,7 +59,7 @@ function [out] = ChemControl_mod19_modSim(parameters, subj)
     w_ng = q0;
     sv = [0.5 -0.5 0.5 -0.5];
     Omega = 0;
-    omega = 1/(1+exp(-beta*(Omega-thres)));
+    omega = lapse_bounds+((1-2*lapse_bounds)/(1+exp(-beta*(Omega-thres))));
     isHC = 1;
     loglik = 0;
 
@@ -70,7 +70,7 @@ function [out] = ChemControl_mod19_modSim(parameters, subj)
         isRewarded = cali_randRewards(t);
 
         w_g(s) = omega * q_g(s) + goBias + (1-omega)*sv(s);
-        w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
+        w_ng(s) = omega * q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
         a = returnAction(p1);
@@ -80,24 +80,24 @@ function [out] = ChemControl_mod19_modSim(parameters, subj)
         elseif ~mod(s, 2) && o == 0
             o = 1;
         end
-        mu = mu + alpha_lr * (o-mu);
-        v_pe = o - sv(s) + mu;
+        v_pe = o - sv(s);
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
 
         if a==1
             loglik = loglik + log(p1 + eps);
 
-            q_pe = o-q_g(s) +mu;
+            q_pe = o-q_g(s);
 
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
             loglik = loglik + log((1-p1) + eps);
 
-            q_pe = o-q_ng(s)+mu;
+            q_pe = o-q_ng(s);
 
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
-        Omega = Omega + alpha*(abs(v_pe) - abs(q_pe) - Omega);
-        omega = 1/(1+exp(-beta*(Omega-thres)));
+        Omega = Omega + alpha*(v_pe - q_pe - Omega);
+    omega = lapse_bounds+((1-2*lapse_bounds)/(1+exp(-beta*(Omega-thres))));
 
         counter = updateRewardLossCounter(s, o);
 
@@ -141,7 +141,7 @@ function [out] = ChemControl_mod19_modSim(parameters, subj)
         w_ng = q0;
         sv = [0.5 -0.5 0.5 -0.5];
         arr = 0;
-        omega = 1/(1+exp(-beta*(Omega-thres)));
+    omega = lapse_bounds+((1-2*lapse_bounds)/(1+exp(-beta*(Omega-thres))));
         for t = 1:T
             omegas(b, t) = omega;
 
@@ -158,40 +158,40 @@ function [out] = ChemControl_mod19_modSim(parameters, subj)
             end
                 
             w_g(s) = omega * q_g(s) + goBias + (1-omega)*sv(s);
-            w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
+            w_ng(s) = omega * q_ng(s);
             p1 = stableSoftmax(w_g(s), w_ng(s));
 
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
             actions(b, t) = a;
             outcomes(b, t) = o;
-
+            
             if mod(s, 2) && o == 0
                 o = -1;
             elseif ~mod(s, 2) && o == 0
                 o = 1;
             end
-            mu = mu + alpha_lr * (o-mu);
+            
+            v_pe = o - sv(s);
+            sv(s) = sv(s) + ep * (rho * o - sv(s));
 
-            v_pe = o - sv(s)+ mu;
-    
             if a==1
                 loglik = loglik + log(p1 + eps);
 
-                q_pe = o-q_g(s)+mu;
+                q_pe = o-q_g(s);
                 pe = rho * o - q_g(s);
                 q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
             elseif a==2
                 loglik = loglik + log((1-p1) + eps);
 
-                q_pe = o-q_ng(s)+mu;
+                q_pe = o-q_ng(s);
                 pe = rho * o - q_ng(s);
                 q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
             end
             
             arr = arr + (o - arr);
-            Omega = Omega + alpha*(abs(v_pe) - abs(q_pe) - Omega);
-            omega = 1/(1+exp(-beta*(Omega-thres)));
+            Omega = Omega + alpha*(v_pe - q_pe - Omega);
+    omega = lapse_bounds+((1-2*lapse_bounds)/(1+exp(-beta*(Omega-thres))));
             if isHC
                 HCcell{hc, s}(end+1) = p1;
                 HCpe{hc, s}(end+1) = pe;

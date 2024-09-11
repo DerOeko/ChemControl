@@ -14,12 +14,12 @@ else
 end
 
 % Iterate through each controllability schedule
-nModels = size(averageOmegasCell, 1); % Assuming each row has all averageOmegas
+nModels = size(averageOmegasCell, 2); % Assuming each row has all averageOmegas
 
 % Prepare subplots for each model in a 2 by ceil(nModels/2) grid
 nCols = ceil(nModels / 4);
 for iModel = 1:nModels
-    modelName = sprintf("M%02d", double(modelsWithOmega(iModel)));
+    modelName = modelsWithOmega(iModel);
     subplot(4, nCols, iModel); % Create a subplot for each model
     
     averageOmegas = averageOmegasCell{iModel};
@@ -45,7 +45,7 @@ plot(1:length(cProbs(1, :)), cProbs(1, :), 'LineWidth', 3, 'LineStyle', '--', 'C
 end
 
 % Add a super title for the entire schedule
-sgtitle('Change of Pavlovian Weighting \\omega over time for  first schedule');
+sgtitle('Change of Pavlovian Weighting \omega over time for  first schedule');
 
 
 end

@@ -45,7 +45,7 @@ if ~exist(dirs.stan_models, 'dir'); mkdir(dirs.stan_models); end
 % ----------------------------------------------------------------------- %
 %% 00b) Settings:
 nMod = length(dir(fullfile(dirs.models, "*.m")));
-selMods = 1:nMod;
+selMods = [14, 18, 21, 22:32];
 %selMods = [1:6];
 fprintf('Fit %d models\n', length(selMods));
 
@@ -85,13 +85,24 @@ priors{11} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_
 priors{12} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
 priors{13} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
 priors{14} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 10 5]); % prior_model_fixedPavlov
-priors{15} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 3 3]); % prior_model_fixedOmega
-priors{16} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{15} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
+priors{16} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
 priors{17} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{18} = struct('mean', [0 2 0], 'variance', [3 5 3]); % prior_model_goBias
+priors{18} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 10 5]); % prior_model_fixedPavlov
 priors{19} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{20} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
+priors{20} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 10]); % prior_model_dynamicOmega2
 priors{21} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
+priors{22} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{23} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 10 5]); % prior_model_fixedPavlov
+priors{24} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{25} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{26} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{27} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
+priors{28} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 10]); % prior_model_dynamicOmega2
+priors{29} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 10]); % prior_model_dynamicOmega2
+priors{30} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 10]); % prior_model_dynamicOmega2
+priors{31} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 10]); % prior_model_dynamicOmega2
+priors{32} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 3]); % prior_model_dynamicOmega2
 
 % priors{8} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega3
 % priors{9} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega4

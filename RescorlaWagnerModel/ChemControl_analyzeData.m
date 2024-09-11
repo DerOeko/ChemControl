@@ -778,7 +778,7 @@ end
 
 % Groups of mods to be combined
 group1Mods = [14];
-group2Mods = [9];
+group2Mods = [12];
 
 % Combine data for groups
 combinedGroup1 = concatenateGroupData(group1Mods, modResp);
@@ -793,7 +793,7 @@ plotData(combinedGroup2, num2str(group2Mods, "M%02d_"));
 % Initialize P_stay to hold counts of stay actions and total trials for each condition
 % Define data types
 
-plotStayAnalysisForGroups(combinedGroup1, combinedGroup2, 'Group 1 (Mods 1, 3, 4)', 'Group 2 (Mods 7, 9)');
+plotStayAnalysisForGroups(combinedGroup1, combinedGroup2, 'Group 1 (M14)', 'Group 2 (M12)');
 
 
 

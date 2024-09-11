@@ -1,6 +1,6 @@
 function [loglik] = ChemControl_mod21(parameters,subj)
 
-% Dynamic Omega, fixed pavlov, without v_pe, abs(q_pe)
+% Dynamic Omega, dynamic pavlov, without pavlov on the nogo side, p_explore
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
@@ -54,23 +54,28 @@ for b = 1:B
         s = states(b, t);
 
         w_g(s) = omega * q_g(s) + goBias + (1-omega) * sv(s);
-        w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
+        w_ng(s) = omega * q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
-        
+
+        v_pe = o - sv(s);
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
+
         if a==1
             loglik = loglik + log(p1 + eps);
             q_pe = o-q_g(s);
 
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+            p_explore = p2;
         elseif a==2
             loglik = loglik + log(p2 + eps);
 
             q_pe = o-q_ng(s);
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+            p_explore = p1;
         end
 
-        Omega = Omega + alpha*(abs(q_pe)- Omega);
+        Omega = Omega + (alpha*p_explore)*(v_pe - q_pe - Omega);
         omega = 1/(1+exp(-beta*(Omega-thres)));
     end
 end

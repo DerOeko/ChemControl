@@ -6,8 +6,9 @@ function [out] = ChemControl_mod15_modSim(parameters, subj)
     ep = sigmoid(parameters(1));
     rho = exp(parameters(2));
     goBias = parameters(3);
-    omega = sigmoid(parameters(4));
-    alpha_lr = sigmoid(parameters(5));
+    alpha = sigmoid(parameters(4));
+    beta = exp(parameters(5));
+    thres = scaledSigmoid(parameters(6));
     % ----------------------------------------------------------------------- %
     %% Unpack data:
 
@@ -42,7 +43,8 @@ function [out] = ChemControl_mod15_modSim(parameters, subj)
 
     actions = zeros(B, T);
     outcomes = zeros(B, T);
-    
+    omegas = zeros(B, T);
+
     q0 = [0 0 0 0];
     hc = 0;
     lc = 0;
@@ -55,7 +57,8 @@ function [out] = ChemControl_mod15_modSim(parameters, subj)
     w_g = q0;
     w_ng = q0;
     sv = [0.5 -0.5 0.5 -0.5];
-    mu = 0;
+    Omega = 0;
+    omega = 1/(1+exp(-beta*(Omega-thres)));
     isHC = 1;
     loglik = 0;
 
@@ -66,7 +69,7 @@ function [out] = ChemControl_mod15_modSim(parameters, subj)
         isRewarded = cali_randRewards(t);
 
         w_g(s) = omega * q_g(s) + goBias + (1-omega)*sv(s);
-        w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
+        w_ng(s) = omega * q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
         a = returnAction(p1);
@@ -76,17 +79,24 @@ function [out] = ChemControl_mod15_modSim(parameters, subj)
         elseif ~mod(s, 2) && o == 0
             o = 1;
         end
-        mu = mu + alpha_lr*(o-mu);
+        v_pe = o - sv(s);
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
 
         if a==1
             loglik = loglik + log(p1 + eps);
 
-            q_g(s) = q_g(s) + ep * (rho * o - q_g(s) + mu);
+            q_pe = o-q_g(s);
+
+            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
             loglik = loglik + log((1-p1) + eps);
 
-            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s) + mu);
+            q_pe = o-q_ng(s);
+
+            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
+        Omega = Omega + alpha*(v_pe - q_pe - Omega);
+        omega = 1/(1+exp(-beta*(Omega-thres)));
 
         counter = updateRewardLossCounter(s, o);
 
@@ -130,7 +140,10 @@ function [out] = ChemControl_mod15_modSim(parameters, subj)
         w_ng = q0;
         sv = [0.5 -0.5 0.5 -0.5];
         arr = 0;
+        omega = 1/(1+exp(-beta*(Omega-thres)));
         for t = 1:T
+            omegas(b, t) = omega;
+
             s = stimuli(b, t);
             isWinState = mod(s, 2);
             randHC = randHCs(b, t); % outcome matters (1, 0, 2)
@@ -144,7 +157,7 @@ function [out] = ChemControl_mod15_modSim(parameters, subj)
             end
                 
             w_g(s) = omega * q_g(s) + goBias + (1-omega)*sv(s);
-            w_ng(s) = omega * q_ng(s) + (1-omega) * (-sv(s));
+            w_ng(s) = omega * q_ng(s);
             p1 = stableSoftmax(w_g(s), w_ng(s));
 
             a = returnAction(p1);
@@ -157,23 +170,27 @@ function [out] = ChemControl_mod15_modSim(parameters, subj)
             elseif ~mod(s, 2) && o == 0
                 o = 1;
             end
-
-            mu = mu + alpha_lr*(o-mu);
+            
+            v_pe = o - sv(s);
+            sv(s) = sv(s) + ep * (rho * o - sv(s));
 
             if a==1
                 loglik = loglik + log(p1 + eps);
 
+                q_pe = o-q_g(s);
                 pe = rho * o - q_g(s);
-                q_g(s) = q_g(s) + ep * (rho * o - q_g(s) + mu);
+                q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
             elseif a==2
                 loglik = loglik + log((1-p1) + eps);
 
+                q_pe = o-q_ng(s);
                 pe = rho * o - q_ng(s);
-                q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s) + mu);
+                q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
             end
             
             arr = arr + (o - arr);
-
+            Omega = Omega + alpha*(v_pe - q_pe - Omega);
+            omega = 1/(1+exp(-beta*(Omega-thres)));
             if isHC
                 HCcell{hc, s}(end+1) = p1;
                 HCpe{hc, s}(end+1) = pe;
@@ -460,6 +477,8 @@ function [out] = ChemControl_mod15_modSim(parameters, subj)
     out.plotReward = plotReward;
     out.arr = averageRewardRate;
     out.alr = averageLossRate;
+        out.omegas = omegas;
+
     out.probShiftAfterLoss_HC = probShiftAfterLoss_HC;
     out.probShiftAfterLoss_LC = probShiftAfterLoss_LC;
     out.probShiftAfterLoss_YC = probShiftAfterLoss_YC;

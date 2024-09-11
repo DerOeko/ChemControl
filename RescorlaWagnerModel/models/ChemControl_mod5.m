@@ -52,6 +52,7 @@ for b = 1:B
 
         w_g(s) = omega * q_g(s) + goBias + (1-omega) * sv(s);
         w_ng(s) = omega * q_ng(s);
+        
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
         
