@@ -157,7 +157,7 @@ allOutcomes = cell(nRuns, 1);
 % Preallocate cell arrays for all stimuli
 allStimuli = cell(nRuns, 1);
 
-selMods = [14, 18, 21, 22:32];
+selMods = [14, 18, 21, 22:40];
 omegas = {};
 i = 0;
 j= 0;

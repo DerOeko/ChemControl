@@ -66,7 +66,7 @@ job.nIter           = 100;
 job.hbi_suffix      = sprintf("%02d", job.selMod);
 
 % Complete name of HBI file:
-job.hbi_name_mod    = fullfile(dirs.hbi, sprintf("hbi_mod_%s.mat", job.hbi_suffix));
+job.hbi_name_mod    = fullfile(dirs.hbi, sprintf("hbi_mod_%s_allData.mat", job.hbi_suffix));
 
 % Number of HBI model to inspect:
 job.hbi_selMod = job.selMod;
@@ -98,7 +98,7 @@ if ~exist(outputFile, "file")
 
     fprintf("Load parameters based on %s\n", job.parType)
     if strcmp(job.parType, 'lap')
-        job.lap_name_mod = fullfile(dirs.lap, sprintf("lap_mod%02d", job.selMod));
+        job.lap_name_mod = fullfile(dirs.lap, sprintf("lap_mod%02d_allData", job.selMod));
         fname = load(job.lap_name_mod);
         cbm = fname.cbm;
         allParam = cbm.output.parameters;

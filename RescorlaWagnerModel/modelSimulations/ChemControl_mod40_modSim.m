@@ -1,12 +1,13 @@
-function [out] = ChemControl_mod3_modSim(parameters, subj)
+function [out] = ChemControl_mod40_modSim(parameters, subj)
     % Standard Q-learning model with delta learning rule.
     
     % ----------------------------------------------------------------------- %
     %% Retrieve parameters:
-    ep = sigmoid(parameters(1));
-    rho = exp(parameters(2));
-    goBias = parameters(3);
-    omega = parameters(4);
+    ep = 0.1;
+    rho = exp(parameters(1));
+    goBias = parameters(2);
+    pi = parameters(3);
+    alpha_lr = ep;
     % ----------------------------------------------------------------------- %
     %% Unpack data:
 
@@ -46,7 +47,7 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
     hc = 0;
     lc = 0;
     yc = 0;
-
+    
     %% Run calibration block
     rewardLossCounter = zeros([1, 2]);
     q_g = q0;
@@ -54,35 +55,43 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
     w_g = q0;
     w_ng = q0;
     sv = [0.5 -0.5 0.5 -0.5];
+    mu = 0;
+    isHC = 1;
     loglik = 0;
 
-    isHC = 1;
     for t = 1:T
         s = cali_stimuli(t);
         randHC = cali_randHC(t);
         randLC = cali_randLC(t);
         isRewarded = cali_randRewards(t);
 
-        w_g(s) = q_g(s) + goBias + omega*sv(s);
+        w_g(s) = q_g(s) + goBias + pi*sv(s);
         w_ng(s) = q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
         a = returnAction(p1);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
-        
         if mod(s, 2) && o == 0
             o = -1;
         elseif ~mod(s, 2) && o == 0
             o = 1;
         end
-        if a==1
+        mu = mu + alpha_lr * (rho*o - mu);
+        % Safeguard ep calculation
+        ep_new = ep * (1 + (mu / (rho + eps))); % Add eps to rho to prevent division by zero
+        
+        % Ensure ep stays within a reasonable range (optional, depending on model)
+        ep_new = max(min(ep_new, 1-eps), eps); % Keep ep within (eps, 1-eps)
+        ep = ep_new;    
+
+        if a==1            
             loglik = loglik + log(p1 + eps);
 
-            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+            q_g(s) = q_g(s) + ep * (rho * o - q_g(s) + mu);
         elseif a==2
             loglik = loglik + log((1-p1) + eps);
 
-            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s) + mu);
         end
 
         counter = updateRewardLossCounter(s, o);
@@ -140,7 +149,7 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
                 isRewarded = avoidedVec(t);
             end
                 
-            w_g(s) = q_g(s) + goBias + omega*sv(s);
+            w_g(s) = q_g(s) + goBias + pi*sv(s);
             w_ng(s) = q_ng(s);
             p1 = stableSoftmax(w_g(s), w_ng(s));
 
@@ -153,16 +162,25 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
             elseif ~mod(s, 2) && o == 0
                 o = 1;
             end
+
+            mu = mu + alpha_lr * (rho*o - mu);
+            % Safeguard ep calculation
+            ep_new = ep * (1 + (mu / (rho + eps))); % Add eps to rho to prevent division by zero
+            
+            % Ensure ep stays within a reasonable range (optional, depending on model)
+            ep_new = max(min(ep_new, 1-eps), eps); % Keep ep within (eps, 1-eps)
+            ep = ep_new;    
+
             if a==1
                 loglik = loglik + log(p1 + eps);
 
                 pe = rho * o - q_g(s);
-                q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+                q_g(s) = q_g(s) + ep * (rho * o - q_g(s) + mu);
             elseif a==2
                 loglik = loglik + log((1-p1) + eps);
 
                 pe = rho * o - q_ng(s);
-                q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+                q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s) + mu);
             end
             
             arr = arr + (o - arr);

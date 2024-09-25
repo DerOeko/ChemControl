@@ -52,10 +52,10 @@ for b = 1:B
         a = actions(b, t);
         o = outcomes(b, t);
         s = states(b, t);
-        mu = mu + alpha_lr*(rho*o-mu);
+        mu = mu + alpha_lr*(rho*o-mu); % -> 1*rho if optimal behaviour
 % Safeguard ep calculation
         ep_new = ep * (1 + (mu / (rho + eps))); % Add eps to rho to prevent division by zero
-        
+        % Could be negative? Does not make sense
         % Ensure ep stays within a reasonable range (optional, depending on model)
         ep_new = max(min(ep_new, 1-eps), eps); % Keep ep within (eps, 1-eps)
         ep = ep_new;        

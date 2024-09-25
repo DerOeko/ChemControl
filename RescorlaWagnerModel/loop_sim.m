@@ -29,7 +29,8 @@ addpath(fullfile(dirs.root, "Log/Behavior/Modelling_CBM/Simulations"));
 
 dirs.models         = fullfile(dirs.root, 'models');
 nMod = length(dir(fullfile(dirs.models, "*.m")));
-simTypes = ["modSim" "realSim"];
+fprintf("Found %i models.\n", nMod)
+simTypes = ["modSim"];
 parTypes = ["lap" "hbi"];
 job.simType = "modSim";
 job.parType = "parType";
@@ -37,8 +38,8 @@ job.parType = "parType";
 % ----------------------------------------------------------------------- %
 %% Loop over models:
 
-for i = 1:2
-    for j = 1:2
+for i = 1:length(simTypes)
+    for j = 1:length(parTypes)
         for iMod = 1:nMod
             job.simType = simTypes(i);
             job.parType = parTypes(j);

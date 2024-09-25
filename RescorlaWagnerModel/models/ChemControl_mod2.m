@@ -48,7 +48,7 @@ for b = 1:B
         o = outcomes(b, t);
         s = states(b, t);
 
-        w_g(s) = q_g(s) + goBias;
+        w_g(s) = q_g(s) + goBias; % More likely to give Go responses
         w_ng(s) = q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
