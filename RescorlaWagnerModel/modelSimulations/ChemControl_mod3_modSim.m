@@ -63,7 +63,7 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
         randLC = cali_randLC(t);
         isRewarded = cali_randRewards(t);
 
-        w_g(s) = q_g(s) + goBias + omega*sv(s);
+        w_g(s) = q_g(s) + goBias + (1-omega)*sv(s);
         w_ng(s) = q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
 
@@ -140,7 +140,7 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
                 isRewarded = avoidedVec(t);
             end
                 
-            w_g(s) = q_g(s) + goBias + omega*sv(s);
+            w_g(s) = q_g(s) + goBias + (1-omega)*sv(s);
             w_ng(s) = q_ng(s);
             p1 = stableSoftmax(w_g(s), w_ng(s));
 

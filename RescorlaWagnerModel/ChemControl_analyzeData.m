@@ -758,7 +758,8 @@ else
     fprintf('No matching files found.\n');
 end
 
-f_hbi = load(mostRecentFile);
+%f_hbi = load(mostRecentFile);
+f_hbi = load('/project/3017083.01/behavioral_study/scripts/matlab_scripts/RescorlaWagnerModel/Log/Behavior/Modelling_CBM/HBI_Results/hbi_mod_03_46_56_57_58_59_60_allData.mat');
 cbm = f_hbi.cbm;
 nSub = size(cbm.output.parameters{1}, 1);
 nMod = size(cbm.output.parameters, 1);
@@ -777,8 +778,8 @@ for iMod = 1:nMod
 end
 
 % Groups of mods to be combined
-group1Mods = [14];
-group2Mods = [12];
+group1Mods = [1];
+group2Mods = [2,6];
 
 % Combine data for groups
 combinedGroup1 = concatenateGroupData(group1Mods, modResp);
@@ -793,7 +794,7 @@ plotData(combinedGroup2, num2str(group2Mods, "M%02d_"));
 % Initialize P_stay to hold counts of stay actions and total trials for each condition
 % Define data types
 
-plotStayAnalysisForGroups(combinedGroup1, combinedGroup2, 'Group 1 (M14)', 'Group 2 (M12)');
+plotStayAnalysisForGroups(combinedGroup1, combinedGroup2, 'Group 1 (M3)', 'Group 2 (M12)');
 
 
 

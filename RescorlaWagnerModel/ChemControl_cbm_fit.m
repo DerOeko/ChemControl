@@ -45,7 +45,7 @@ if ~exist(dirs.stan_models, 'dir'); mkdir(dirs.stan_models); end
 % ----------------------------------------------------------------------- %
 %% 00b) Settings:
 nMod = length(dir(fullfile(dirs.models, "*.m")));
-selMods = [14, 18, 21, 22:26, 33:40];
+selMods = [3, 46, 56:60];
 %selMods = [1:6];
 fprintf('Fit %d models\n', length(selMods));
 
@@ -74,43 +74,72 @@ fprintf('Initialize priors\n')
 priors{1} = struct('mean', [0 2], 'variance', [3 5]); % prior_model
 priors{2} = struct('mean', [0 2 0], 'variance', [3 5 10]); % prior_model_goBias
 priors{3} = struct('mean', [0 2 0 0], 'variance', [3 5 10 10]); % prior_model_fixedPavlov
-priors{4} = struct('mean', [0 2 0 0], 'variance', [3 5 10 10]); % prior_model_dynamicPavlov
-priors{5} = struct('mean', [0 2 0 0], 'variance', [3 5 10 3]); % prior_model_fixedOmega
-priors{6} = struct('mean', [0 2 0 0], 'variance', [3 5 10 3]); % prior_model_dynamicOmega1
-priors{7} = struct('mean', [0 2 0 0], 'variance', [3 5 10 3]); % prior_model_fixedOmega
-priors{8} = struct('mean', [0 2 0 0], 'variance', [3 5 10 3]); % prior_model_dynamicOmega1
-priors{9} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
-priors{10} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
-priors{11} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
-priors{12} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{13} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{14} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 10 3]); % prior_model_fixedPavlov
-priors{15} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
-priors{16} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
-priors{17} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{18} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 10 3]); % prior_model_fixedPavlov
-priors{19} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{20} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 10]); % prior_model_dynamicOmega2
-priors{21} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
-priors{22} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{23} = struct('mean', [0 2 0 0 0], 'variance', [3 5 10 10 3]); % prior_model_fixedPavlov
-priors{24} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{25} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{26} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{27} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]); % prior_model_dynamicOmega2
-priors{28} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 10]); % prior_model_dynamicOmega2
-priors{29} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 10]); % prior_model_dynamicOmega2
-priors{30} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 10]); % prior_model_dynamicOmega2
-priors{31} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 10]); % prior_model_dynamicOmega2
-priors{32} = struct('mean', [0 2 0 0 2 0 0 0], 'variance', [3 5 10 3 5 3 3 3]); % prior_model_dynamicOmega2
-priors{33} = struct('mean', [0 2 0 2 0 0], 'variance', [3 5 10 5 3 3]);
-priors{34} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]); % prior_model_dynamicOmega2
-priors{35} = struct('mean', [0 2 0 2 0], 'variance', [3 5 10 5 3]); % prior_model_dynamicOmega2
-priors{36} = struct('mean', [0 0 2 0 0], 'variance', [3 10 5 3 3]);
-priors{37} = struct('mean', [0 0 0 3 0], 'variance', [3 10 3 5 3]);
-priors{38} = struct('mean', [0 0 3 0], 'variance', [3 10 5 3]);
-priors{39} = struct('mean', [2 0 0 0], 'variance', [5 10 10 3]); % prior_model_fixedPavlov
-priors{40} = struct('mean', [2 0 0], 'variance', [5 10 10]); % prior_model_fixedPavlov
+priors{4} = struct('mean', [0 2 0 0], 'variance', [3 5 10 3]); % prior_model_dynamicPavlov
+priors{5} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{6} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{7} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{8} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{9} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{10} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{11} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{12} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{13} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{14} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{15} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{16} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{17} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{18} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{19} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{20} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{21} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{22} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{23} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{24} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{25} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{26} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{27} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{28} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{29} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{30} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{31} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{32} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{33} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{34} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{35} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{36} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{37} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{38} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{39} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{40} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{41} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{42} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{43} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{44} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{45} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{46} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{47} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{48} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{49} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{50} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{51} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{52} = struct('mean', [0 2 0 2 0 0], 'variance', [3 5 10 5 3 3]);
+priors{53} = struct('mean', [0 2 0 0 2 0 ], 'variance', [3 5 10 3 5 3]);
+priors{54} = struct('mean', [0 2 0 2 0 ], 'variance', [3 5 10 5 3]);
+priors{55} = struct('mean', [0 2 0 0], 'variance', [3 5 10 3]); % prior_model_dynamicPavlov
+priors{56} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{57} = struct('mean', [0 2 0 0 2 0 0], 'variance', [3 5 10 3 5 3 3]);
+priors{58} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{59} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{60} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{61} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{62} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{63} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{64} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{65} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{66} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{67} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{68} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{69} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
 
 % Output names:
 fprintf("Initialize output file names\n")
@@ -129,7 +158,7 @@ subj1 = allData_d{1};
 fprintf(">>>>>  Test with random values\n")
 % a) Random parameter values:
 for iMod = selMods
-    parameters = randn(1, 8);
+    parameters = randn(1, 30);
     F1 = eval(sprintf('ChemControl_mod%d(parameters, subj1)', iMod));
     fprintf('Model %02d: loglik = %f\n', iMod, F1);
 end
@@ -137,7 +166,7 @@ end
 fprintf(">>>>>  Test with extreme values\n")
 % b) Extreme parameter values:
 for iMod = selMods
-    parameters = [-10 10 -10 10 10 10 10 10];
+    parameters = ones(30) * 10;
     F1 = eval(sprintf('ChemControl_mod%d(parameters, subj1)', iMod));
     fprintf('Model %02d: loglik = %f\n', iMod, F1);
 end
@@ -421,6 +450,147 @@ for ctype = control_types
     fprintf('Protected exceedance probability for %s:\n', ctype);
     disp(cbm.output.protected_exceedance_prob)
 end
+
+%% AIC, BIC, Model Likelihood comparisons
+
+logs = -logModEvi;
+AICvalues = zeros(nSub, length(selMods ));
+BICvalues = zeros(nSub, length(selMods ));
+MDLvalues = zeros(nSub, length(selMods));
+
+for iMod = 1:length(selMods)
+    nParam = size(cbm.output.parameters{iMod}, 2);
+
+    for iSub = 1:nSub
+        L = logModEvi(iSub, iMod);
+        n = 360;
+        AICvalues(iSub, iMod) = 2*nParam - 2 * L;
+        BICvalues(iSub, iMod) = nParam*log(n) - 2 * L;
+        MDLvalues(iSub, iMod) = mdl_rl(nParam, n, -L);
+    end
+end
+      
+
+% Define model names
+modelNames = cell(length(selMods), 1); % Update with your actual model names
+for iMod = 1:length(selMods)
+    selMod = selMods(iMod);
+    modelNames{iMod} = sprintf('M%02d', selMod);
+end
+
+x = 1:length(selMods);
+
+figure;
+hold on;
+bar(x, mean(AICvalues, 1), 0.5, 'FaceAlpha', 0.3, 'EdgeAlpha', 0.5)
+
+for iSub = 1:nSub
+    plot(x, AICvalues(iSub, :), '-o', 'LineWidth', 1);
+end
+xlabel('Model');
+ylabel('AIC Value');
+title('AIC Values Across Models for Each Subject');
+xticks(x);
+xticklabels(modelNames);
+grid on;
+
+% Optionally, add a legend if the number of subjects is small
+% legend(arrayfun(@(s) sprintf('Subject %d', s), 1:nSub, 'UniformOutput', false), 'Location', 'BestOutside');
+
+hold off;
+
+figure;
+boxplot(AICvalues, 'Labels', modelNames);
+xlabel('Model');
+ylabel('AIC Value');
+title('AIC Values Distribution Across Subjects');
+grid on;
+
+figure;
+hold on;
+bar(x, mean(BICvalues, 1), 0.5, 'FaceAlpha', 0.3, 'EdgeAlpha', 0.5)
+
+for iSub = 1:nSub
+    plot(x, BICvalues(iSub, :), '-o', 'LineWidth', 1);
+end
+
+xlabel('Model');
+ylabel('BIC Value');
+title('BIC Values Across Models for Each Subject');
+xticks(x);
+xticklabels(modelNames);
+grid on;
+
+% Optionally, add a legend if the number of subjects is small
+% legend(arrayfun(@(s) sprintf('Subject %d', s), 1:nSub, 'UniformOutput', false), 'Location', 'BestOutside');
+
+hold off;
+
+
+figure;
+hold on;
+bar(x, mean(MDLvalues, 1), 0.5, 'FaceAlpha', 0.3, 'EdgeAlpha', 0.5)
+
+for iSub = 1:nSub
+    plot(x, MDLvalues(iSub, :), '-o', 'LineWidth', 1);
+end
+xlabel('Model');
+ylabel('MDL Value');
+title('MDL Values Across Models for Each Subject');
+xticks(x);
+xticklabels(modelNames);
+grid on;
+
+% Optionally, add a legend if the number of subjects is small
+% legend(arrayfun(@(s) sprintf('Subject %d', s), 1:nSub, 'UniformOutput', false), 'Location', 'BestOutside');
+
+hold off;
+
+figure;
+boxplot(BICvalues, 'Labels', modelNames);
+xlabel('Model');
+ylabel('BIC Value');
+title('BIC Values Distribution Across Subjects');
+grid on;
+
+sumAIC = sum(AICvalues, 1);
+sumBIC = sum(BICvalues, 1);
+% Plot the bar chart
+figure;
+hold on;
+% Create grouped bar chart
+barData = [sumAIC; sumBIC]';
+b = bar(barData, 'grouped');
+
+% Set colors for AIC and BIC bars
+b(1).FaceColor = [0.2, 0.6, 0.5]; % Teal for AIC
+b(2).FaceColor = [0.8, 0.4, 0.4]; % Reddish for BIC
+
+% Add labels and title
+xlabel('Models');
+ylabel('Sum of AIC/BIC Values');
+title('Comparison of AIC and BIC Across Models');
+
+% Set x-axis tick labels to model names
+xticks(1:length(modelNames));
+xticklabels(modelNames);
+
+% Add legend
+legend({'AIC', 'BIC'}, 'Location', 'Best');
+
+% Improve appearance with gridlines
+grid on;
+
+% Display values on top of bars
+for k = 1:length(b)
+    % Get X and Y data of bars for placing text
+    xData = b(k).XEndPoints;
+    yData = b(k).YEndPoints;
+    labels = string(round(b(k).YData, 1)); % Round the values for display
+    text(xData, yData, labels, 'VerticalAlignment', 'bottom', 'HorizontalAlignment', 'center', 'FontSize', 10);
+end
+
+hold off;
 % END OF FILE.
 
 % modVec = selMods;

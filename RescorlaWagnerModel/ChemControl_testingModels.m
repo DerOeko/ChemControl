@@ -42,6 +42,8 @@ dataType = 'allData';
 
 parType = 'lap';
 selMod = 1;
+selMods = [3, 46, 59, 61, 62:67];
+
 fname_mod = cell(nMod, 1);
 
 for iMod = 1:nMod
@@ -60,12 +62,13 @@ nParam      = size(subParam, 2);
 
 parType = 'hbi';
 % extract
-for iMod = 1:nMod
+for iMod = 1:length(selMods)
+    idx = selMods(iMod); 
     % load
-    fname_hbi       = fullfile(dirs.hbi, sprintf('hbi_mod_%02d_%s.mat', iMod, dataType));
-    fprintf("Load model %d fit with HBI\n", iMod);
+    fname_hbi       = fullfile(dirs.hbi, sprintf('hbi_mod_%02d_%s.mat', idx, dataType));
+    fprintf("Load model %d fit with HBI\n", idx);
     load(fname_hbi)
-    fprintf("Extract model %d fit with HBI\n", iMod);
+    fprintf("Extract model %d fit with HBI\n", idx);
     groupParams{iMod} = cbm.output.group_mean{:};
 end
 
@@ -96,9 +99,9 @@ end
 
 %% 02a) Run settings
 %% Schedules, runs, trials, blocks, states, and controllability settings
-nRuns = 150;
-nTrials = 80;
-nBlocks = 16;
+nRuns = nSub;
+nTrials = 40;
+nBlocks = 8;
 nStates = 4;
 nSchedules = 11;
 controllabilitySchedules = [
@@ -157,33 +160,54 @@ allOutcomes = cell(nRuns, 1);
 % Preallocate cell arrays for all stimuli
 allStimuli = cell(nRuns, 1);
 
-selMods = [14, 18, 21, 22:40];
 omegas = {};
+omegasStim = zeros(nTrials * nBlocks, 4);
+allOmegaStim = {};
 i = 0;
 j= 0;
+k = 0;
+schedule_counter = 0;
 % 02b) Run simulation and plot
-for iMod = selMods
+for iMod = 1:length(selMods)
+    idx = selMods(iMod);
     parameters = groupParams{iMod};
     i = i+1;
     % Test
     subj = sim_subj(nBlocks, nTrials);
-    out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
-    if isfield(out, 'omegas')
+    out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", idx));
+    if isfield(out, 'omegas') 
         j= j + 1;
-        modelsWithOmegas(j) = sprintf("M%02d", iMod);
+        modelsWithOmegas(j) = sprintf("M%02d", idx);
+    end
+    
+    if isfield(out, 'omegasStim') 
+        k= k + 1;
+        modelsWithOmegasStim(k) = sprintf("M%02d", idx);
     end
     
     for iRun = 1:nRuns
         subj = sim_subj(nBlocks, nTrials);
-        out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", iMod));
+        out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", idx));
         % Collect omegas if they are a field in the output
         if isfield(out, 'omegas') && subj.selected_schedule_idx == 1
+            % if size(out.omegas, 3) == 4
+            %     reshaped_omegas = reshape(out.omegas', [nTrials * nBlocks, 4]);
+            % else
+            % end
             reshaped_omegas = reshape(out.omegas', [nTrials * nBlocks, 1]);
             if length(omegas) < i
                 omegas{i} = reshaped_omegas; % Initialize the cell if it doesn't exist
             else
                 omegas{i} = [omegas{i} reshaped_omegas]; % Append to the existing cell
             end
+        end
+
+        if isfield(out, 'omegasStim') && subj.selected_schedule_idx == 1
+            reshaped_omegas = reshape(out.omegasStim, [nTrials * nBlocks, 4]);
+            schedule_counter = schedule_counter + 1;
+
+
+            omegasStim = omegasStim + reshaped_omegas;
         end
 
       % Directly store results in the preallocated arrays
@@ -193,6 +217,12 @@ for iMod = selMods
 
         allStayAnalysis(iRun, :, :) = calcSummaryStayAnalysis(out);
     end
+    
+    if isfield(out, 'omegasStim')
+        allOmegaStim{k} = omegasStim./schedule_counter;
+        omegasStim = zeros(nTrials * nBlocks, 4);
+    end
+    schedule_counter = 0;
 
     % Concatenate all results after the loop
     HCcell = vertcat(allHCcell{:});
@@ -220,19 +250,19 @@ for iMod = selMods
     % Plot the learning curves for each model
     figure(fig1);
     subplot(3, ceil(length(selMods)/3), i);
-    plotLearningCurves(HCcell, sprintf("M%02d", iMod), fig1);
+    plotLearningCurves(HCcell, sprintf("M%02d", idx), fig1);
     
     figure(fig2);
     subplot(3, ceil(length(selMods)/3), i);
-    plotLearningCurves(LCcell, sprintf("M%02d", iMod), fig2);
+    plotLearningCurves(LCcell, sprintf("M%02d", idx), fig2);
     
     figure(fig3)
     subplot(3, ceil(length(selMods)/3), i);
-    plotLearningCurves(YCcell, sprintf("M%02d", iMod), fig3);
+    plotLearningCurves(YCcell, sprintf("M%02d", idx), fig3);
 
     figure(fig4)
     subplot(3, ceil(length(selMods)/3), i);
-    plotSummaryStayAnalysis(avgStayAnalysis, stderrStayAnalysis, sprintf("M%02d", iMod), fig4);
+    plotSummaryStayAnalysis(avgStayAnalysis, stderrStayAnalysis, sprintf("M%02d", idx), fig4);
 end
 
 % Initialize an empty cell array for average omegas
@@ -252,9 +282,14 @@ end
 %% 02c) Plotting
 
 % Plot the average Omegas for the first schedule
-plotOmegas(averageOmegas, cPs, modelsWithOmegas)
+if ~isempty(omegas)
+    plotOmegas(averageOmegas, cPs, modelsWithOmegas)
+end
 
-
+% Plot the average Omegas for the first schedule in stimulus indepedent
+if ~isempty(omegasStim)
+    plotOmegasStim(allOmegaStim, cPs, modelsWithOmegasStim)
+end
 % % Plot the average Omegas
 % figure(fig10);
 % plotOmegas([averageOmegas6, averageOmegas7, averageOmegas8, averageOmegas9, averageOmegas10, averageOmegas11, averageOmegas12, averageOmegas13, averageOmegas14, averageOmegas15, averageOmegas16, averageOmegas17, averageOmegas18, averageOmegas19, averageOmegas20, averageOmegas21], cPs, fig10);
