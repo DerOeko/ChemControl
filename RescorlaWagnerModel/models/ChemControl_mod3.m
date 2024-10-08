@@ -1,7 +1,7 @@
 function [loglik] = ChemControl_mod3(parameters,subj)
 
 % Standard Rescorla Wagner model with rho feedback sensitivity + goBias +
-% fixed controllability estimate
+% fixed controllability estimate + non competitive
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
@@ -51,7 +51,7 @@ for b = 1:B
         o = outcomes(b, t);
         s = states(b, t);
 
-        w_g(s) = q_g(s) + goBias + omega * sv(s); % Here, we assume a fixed influence of pavlovian bias on the probability of go. People are less likely to go in Avoid trials.
+        w_g(s) = q_g(s) + goBias + (1-omega) * sv(s); % Here, we assume a fixed influence of pavlovian bias on the probability of go. People are less likely to go in Avoid trials.
         w_ng(s) = q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;

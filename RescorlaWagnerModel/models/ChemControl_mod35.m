@@ -1,16 +1,17 @@
 function [loglik] = ChemControl_mod35(parameters,subj)
 
-% Dynamic Omega, dynamic pavlov, without pavlov on the nogo side,
-% p_explore, arr, randexp by omega, with ep = alpha_lr = alpha
+% Dynamic Omega, dynamic pavlov, competitive, rescaled PEs, ARR on Q
+% state dependent omega 
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
 rho = exp(parameters(2));
 goBias = parameters(3);
-alpha = ep;
-beta = exp(parameters(4));
-thres = scaledSigmoid(parameters(5));
-alpha_lr = ep;
+alpha = sigmoid(parameters(4));
+beta = exp(parameters(5));
+thres = scaledSigmoid(parameters(6));
+alpha_lr = sigmoid(parameters(7));
+
 % ----------------------------------------------------------------------- %
 
 %% Unpack data:
@@ -41,44 +42,44 @@ loglik = 0;
 
 % ----------------------------------------------------------------------- %
 %% Calculating log likelihood for action sequence with this model:
-Omega = 0;
+Omega = [0 0 0 0];
 mu = 0;
+
 for b = 1:B
     w_g = initQ;
     w_ng = initQ;
     q_g = initQ;
     q_ng = initQ;
     sv = [0.5 -0.5 0.5 -0.5];
-    omega = 1/(1+exp(-beta*(Omega-thres)));
+    omega = 1./(1+exp(-beta*(Omega-thres)));
     for t=1:T
         a = actions(b, t);
         o = outcomes(b, t);
         s = states(b, t);
         mu = mu + alpha_lr*(rho*o-mu);
-        w_g(s) = omega * q_g(s) + goBias + (1-omega) * sv(s);
-        w_ng(s) = omega * q_ng(s);
-        p1 = stableSoftmax_randexp(w_g(s), w_ng(s), 1-omega);
+
+        w_g(s) = omega(s) * q_g(s) + goBias + (1-omega(s)) * sv(s);
+        w_ng(s) = omega(s) * q_ng(s);
+        p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
 
-        v_pe = rho*o - sv(s)+mu;
-        sv(s) = sv(s) + ep * (rho * o - sv(s)+mu);
+        v_pe = o - sv(s)/rho;
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
 
         if a==1
             loglik = loglik + log(p1 + eps);
-            q_pe = rho*o-q_g(s)+mu;
+            q_pe = o-q_g(s)/rho;
 
-            q_g(s) = q_g(s) + ep * (rho * o - q_g(s)+mu);
-            p_explore = p2;
+            q_g(s) = q_g(s) + ep * (rho * o - q_g(s) + mu);
         elseif a==2
             loglik = loglik + log(p2 + eps);
 
-            q_pe = rho*o-q_ng(s)+mu;
-            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s)+mu);
-            p_explore = p1;
+            q_pe = o-q_ng(s)/rho;
+            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s) + mu);
         end
 
-        Omega = Omega + (alpha*p_explore)*(v_pe - q_pe - Omega);
-        omega = 1/(1+exp(-beta*(Omega-thres)));
+        Omega(s) = Omega(s) + alpha*(v_pe - q_pe - Omega(s));
+        omega(s) = 1./(1+exp(-beta*(Omega(s)-thres)));
     end
 end
 end
