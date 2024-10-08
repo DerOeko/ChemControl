@@ -4,7 +4,7 @@ function o = returnReward(s, a, isHC, randLC, randHC, isRewarded)
     isCorrectAction = a == getCorrectAction(s);
 
     if isHC % high control block
-            if randHC == 1 % outcome matters
+            if randHC == 1 % action matters
                 if isCorrectAction % correct action
                     if isRewarded % correct actions are rewarded
                         if isWinState % win state
@@ -34,7 +34,7 @@ function o = returnReward(s, a, isHC, randLC, randHC, isRewarded)
                         end
                     end
                 end % end of isCorrectAction
-            elseif randHC == 0 % if outcome doesn't matter
+            elseif randHC == 0 % if action doesn't matter
                 if isRewarded
                     if isWinState
                         o = 1;
