@@ -42,7 +42,7 @@ dataType = 'allData';
 
 parType = 'lap';
 selMod = 1;
-selMods = [3, 46, 59, 61, 62:67];
+selMods = [59];
 
 fname_mod = cell(nMod, 1);
 
@@ -99,7 +99,7 @@ end
 
 %% 02a) Run settings
 %% Schedules, runs, trials, blocks, states, and controllability settings
-nRuns = nSub;
+nRuns = nSub*2;
 nTrials = 40;
 nBlocks = 8;
 nStates = 4;
@@ -162,10 +162,13 @@ allStimuli = cell(nRuns, 1);
 
 omegas = {};
 omegasStim = zeros(nTrials * nBlocks, 4);
+qs = {};
+svs = {};
 allOmegaStim = {};
 i = 0;
 j= 0;
 k = 0;
+l = 0;
 schedule_counter = 0;
 % 02b) Run simulation and plot
 for iMod = 1:length(selMods)
@@ -184,7 +187,11 @@ for iMod = 1:length(selMods)
         k= k + 1;
         modelsWithOmegasStim(k) = sprintf("M%02d", idx);
     end
-    
+    if isfield(out, 'qs')
+        l = l + 1;
+        modelsWithQs(l) = sprintf("M%02d", idx);
+    end
+
     for iRun = 1:nRuns
         subj = sim_subj(nBlocks, nTrials);
         out = eval(sprintf("ChemControl_mod%d_modSim(parameters, subj)", idx));
@@ -208,6 +215,19 @@ for iMod = 1:length(selMods)
 
 
             omegasStim = omegasStim + reshaped_omegas;
+        end
+        
+        if isfield(out, 'qs') && subj.selected_schedule_idx == 1
+            reshaped_qs = reshape(out.qs', [nTrials * nBlocks, 1]);
+            reshaped_svs = reshape(out.svs', [nTrials * nBlocks, 1]);
+
+            if length(qs) < i
+                qs{i} = reshaped_qs;
+                svs{i} = reshaped_svs;
+            else
+                qs{i} = [qs{i} reshaped_qs];
+                svs{i} = [svs{i} reshaped_svs];
+            end
         end
 
       % Directly store results in the preallocated arrays
@@ -267,6 +287,8 @@ end
 
 % Initialize an empty cell array for average omegas
 averageOmegas = {};
+averageQs = {};
+averageSvs = {};
 
 % Counter to track the index in averageOmegas
 index = 1;
@@ -279,6 +301,12 @@ for i = 1:length(omegas)
     end
 end
 
+for i = 1:length(qs)
+    if ~isempty(qs{i})
+        averageQs{i} = mean(qs{i}, 2);
+        averageSvs{i} = mean(svs{i}, 2);
+    end
+end
 %% 02c) Plotting
 
 % Plot the average Omegas for the first schedule

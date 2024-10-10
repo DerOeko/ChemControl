@@ -1,6 +1,7 @@
-function [loglik] = ChemControl_mod59(parameters,subj)
+function [loglik] = ChemControl_mod72(parameters,subj)
 
-% Dynamic Omega, dynamic pavlov, p_explore, competitive, rescaled PEs, mu
+% Dynamic Omega, dynamic pavlov, p_explore, competitive, rescaled PEs, mu,
+% continuous
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
@@ -34,12 +35,12 @@ T = size(outcomes, 2);
 initQ = [0 0 0 0];
 
 loglik = 0;
+
 % Store actions, outcomes and stimuli
 
 % ----------------------------------------------------------------------- %
 %% Calculating log likelihood for action sequence with this model:
-Omega = [0 0 0 0];
-omega = 1./(1+exp(-beta*(Omega-thres)));
+Omega = 0;
 
 for b = 1:B
     w_g = initQ;
@@ -47,35 +48,34 @@ for b = 1:B
     q_g = initQ;
     q_ng = initQ;
     sv = [0.5 -0.5 0.5 -0.5];
+    omega = 1/(1+exp(-beta*(Omega-thres)));
+
     for t=1:T
         a = actions(b, t);
         o = outcomes(b, t);
         s = states(b, t);
-        w_g(s) = omega(s) * q_g(s) + goBias + (1-omega(s)) * sv(s);
-        w_ng(s) = omega(s) * q_ng(s);
-        p1 = stableSoftmax_randexp(w_g(s), w_ng(s), 1-omega(s));
+        w_g(s) = q_g(s) + goBias + (1-omega) * sv(s);
+        w_ng(s) = q_ng(s);
+        p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
-
-        v_pe = o - sv(s)/rho;
-        sv(s) = sv(s) + ep * (rho * o - sv(s));
 
         if a==1
             loglik = loglik + log(p1 + eps);
-            q_pe = o-q_g(s)/rho;
+            q_pe = rho*o-q_g(s);
 
-            q_g(s) = q_g(s) + ep *omega(s)* (rho * o - q_g(s) + omega(s));
+            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
             p_explore = p2;
 
         elseif a==2
             loglik = loglik + log(p2 + eps);
 
-            q_pe = o-q_ng(s)/rho;
-            q_ng(s) = q_ng(s) + ep*omega(s) * (rho * o - q_ng(s) + omega(s));
+            q_pe = rho*o-q_ng(s);
+            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
             p_explore = p1;
         end
 
-        Omega(s) = Omega(s) + (alpha*p_explore)*(v_pe - q_pe - Omega(s));
-        omega(s) = 1./(1+exp(-beta*(Omega(s)-thres)));
+        Omega = Omega + alpha*(Omega-abs(q_pe));
+        omega = 1/(1+exp(-beta*(Omega-thres)));
     end
 end
 end

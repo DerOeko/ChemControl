@@ -45,7 +45,7 @@ if ~exist(dirs.stan_models, 'dir'); mkdir(dirs.stan_models); end
 % ----------------------------------------------------------------------- %
 %% 00b) Settings:
 nMod = length(dir(fullfile(dirs.models, "*.m")));
-selMods = [3, 46, 56:60];
+selMods = [3, 72, 73];
 %selMods = [1:6];
 fprintf('Fit %d models\n', length(selMods));
 
@@ -140,6 +140,10 @@ priors{66} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
 priors{67} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
 priors{68} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
 priors{69} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{70} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{71} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{72} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{73} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
 
 % Output names:
 fprintf("Initialize output file names\n")
