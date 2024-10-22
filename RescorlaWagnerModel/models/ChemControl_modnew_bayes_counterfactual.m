@@ -1,8 +1,17 @@
 function [loglik] = ChemControl_mod13(parameters,subj)
 
-% Proposal Romain 09/10
-% This is just the same models as the target model, but with the dynamic omega effect removed
-
+% Proposal Romain 22/10
+% A complete Bayesian learning model for controllability that essentially
+% overrides both Pavlovian and instrumental learning whenever
+% perceived controllability is high, with optimal or near-optimal
+% model-based reward expectations for go and no go.
+% It has an omegaBias parameter that account for less model-
+% The bayesian learning departs from pure normativity only when it comes to
+% updating counterfactuals. For now, counterfactual are updated in
+% proportion with perceived controllability, which makes sense at the
+% psychological level.
+% The model also adds an optimism parameter used to scale anticipated loss
+% and gains up or down (small improvement of fits in my hands).
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
