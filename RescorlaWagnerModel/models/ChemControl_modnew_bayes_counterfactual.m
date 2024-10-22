@@ -31,7 +31,7 @@ init_pss = 1;   % prior confidence, Pavlovian
 omegaStartingBias=0; % starting bias in control inference
 
 % switch to activate counterfactual learning
-omega_counterfactual=true
+omega_counterfactual=true;
 
 %% Unpack data:
 actions = subj.actions;
@@ -48,8 +48,9 @@ outcomes(isWinState & outcomes == 0) = -1;
 % Transform outcomes for non-win states
 outcomes(isNonWinState & outcomes == 0) = 1;
 
-%%% make favorable outcome vector TO DOUBLE CHECK
-% should be 1 for any favorable outcome and 0 for any unfavorable outcome
+%%% make favorable outcome vector TO DOUBLE CHECK !!!
+% should be 1 for any favorable outcome (i.e. best one can get in this trial)
+% and 0 for any unfavorable outcome (when non-best outcome is obtained).
 % not sure about the logic of your input outcome vector so this is a guess
 favorable=subj.outcomes;
 favorable(isNonWinState & favorable == 0) = 1;
@@ -61,18 +62,20 @@ B = size(outcomes, 1);
 % Number of trials:
 T = size(outcomes, 2);
 initQ = zeros(4,1);
+% see how optimism is implemented here:
 initV=[initialOptimism 1-initialOptimism initialOptimism 1-initialOptimism];
 
 % initializations for MB-Bayes decision making
-%
+% for probabilities of favorable outcome
 initSAS = zeros(4,2)+init_msas;
 initSS = zeros(4,1)+init_mss;
-%
+% for confidences into the former
 initSASp = init_psas+zeros(4,2);
 initSSp = init_pss+zeros(4,1);
-% 
+% for potential outcomes of gain and loss trials assumed to be known by MB
+% Bayes decision-maker (not something to be updated)
 initRval = zeros(4,2);
-initRval(:,1)=[0 -1 0 -1]; % assumes that participants know potential outcomes of gain and loss trials
+initRval(:,1)=[0 -1 0 -1]; 
 initRval(:,2)=[1 0 1 0];
 %
 
@@ -82,7 +85,6 @@ loglik = 0;
 
 % ----------------------------------------------------------------------- %
 %% Calculating log likelihood for action sequence with this model:
-Omega = 0;
 
 for b = 1:B
     
@@ -116,8 +118,8 @@ for b = 1:B
         end
 
         % model based values: (Bayesian prob)*(known magnitude) for each action and outcome (favorable or not)
-        mb_g=msas(s,1,1)*initRval(s,1)+msas(s,1,2)*rho*initRval(s,2);
-        mb_ng=msas(s,2,1)*initRval(s,1)+msas(s,2,2)*rho*initRval(s,2);
+        mb_g=(1-msas(s,1))*initRval(s,1)+msas(s,1)*rho*initRval(s,2);
+        mb_ng=(1-msas(s,2))*initRval(s,1)+msas(s,2)*rho*initRval(s,2);
         
         w_g(s) = goBias + (q_g(s)+sv(s))*(1-omega(s))+ mb_g*omega(s);
         w_ng(s) = (-sv(s)+q_ng(s))*(1-omega(s))+ mb_ng*omega(s);
@@ -140,7 +142,7 @@ for b = 1:B
         end
         
         
-        % update model posterior
+        % update controllability likelihood (positive <=> control)
         if fav == 1
             Lglob = Lglob + log(msas(s,a)) - log(mss(s));
             Lstate(s)=Lstate(s) + log(msas(s,a)) - log(mss(s));
