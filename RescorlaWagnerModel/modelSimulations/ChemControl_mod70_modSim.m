@@ -44,6 +44,8 @@ function [out] = ChemControl_mod70_modSim(parameters, subj)
     actions = zeros(B, T);
     outcomes = zeros(B, T);
     omegas = zeros(B, T);
+        svs = zeros(B, T);
+    qs = zeros(B, T);
     q0 = [0 0 0 0];
     hc = 0;
     lc = 0;
@@ -488,5 +490,7 @@ function [out] = ChemControl_mod70_modSim(parameters, subj)
     out.weightedProbShiftAfterLoss_LC = weightedProbShiftAfterLoss_LC;
     out.weightedProbShiftAfterLoss_YC = weightedProbShiftAfterLoss_YC;
     out.loglik = loglik;
+    out.svs = svs;
+    out.qs = qs;
 
 end

@@ -1,4 +1,4 @@
-function [out] = ChemControl_mod3_modSim(parameters, subj)
+function [out] = ChemControl_mod76_modSim(parameters, subj)
     % Standard Q-learning model with delta learning rule.
     
     % ----------------------------------------------------------------------- %
@@ -6,7 +6,11 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
     ep = sigmoid(parameters(1));
     rho = exp(parameters(2));
     goBias = parameters(3);
-    omega = parameters(4);
+    epsilon = sigmoid(parameters(4));
+    betaControl = exp(parameters(5));
+    betaOmega = exp(parameters(6));
+    betaPersist = parameters(7);
+
     % ----------------------------------------------------------------------- %
     %% Unpack data:
 
@@ -56,6 +60,8 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
     w_ng = q0;
     sv = [0.5 -0.5 0.5 -0.5];
     loglik = 0;
+    Omega = 0;
+    persist_flip=[1,-1];
 
     isHC = 1;
     for t = 1:T
@@ -64,10 +70,16 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
         randLC = cali_randLC(t);
         isRewarded = cali_randRewards(t);
 
-        w_g(s) = q_g(s) + goBias + (1-omega)*sv(s);
-        w_ng(s) = q_ng(s);
-        p1 = stableSoftmax(w_g(s), w_ng(s));
-
+        if t==1
+            w_g(s) = q_g(s) + goBias + sv(s)/(betaControl+betaOmega*Omega);
+            w_ng(s) = q_ng(s) + (-sv(s))/(betaControl+betaOmega*Omega);
+        else
+            w_g(s) = q_g(s) + goBias + (sv(s)/(betaControl+betaOmega*Omega))+persist_flip(a)*betaPersist;
+            w_ng(s) = q_ng(s) + ((-sv(s))/(betaControl+betaOmega*Omega))-persist_flip(a)*betaPersist;
+        end
+            
+        p1 = (epsilon/2) + (1-epsilon)*stableSoftmax(w_g(s), w_ng(s));
+        p2 = 1-p1;
         a = returnAction(p1);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
         
@@ -76,19 +88,26 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
         elseif ~mod(s, 2) && o == 0
             o = 1;
         end
+
+        v_pe = rho*o - sv(s);
+        sv(s) = sv(s) + ep * v_pe;
         if a==1
             loglik = loglik + log(p1 + eps);
 
-            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+            q_pe = rho*o-q_g(s);
+            q_g(s) = q_g(s) + ep * q_pe;
         elseif a==2
             loglik = loglik + log((1-p1) + eps);
 
-            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+            q_pe = rho*o-q_ng(s);
+            q_ng(s) = q_ng(s) + ep * q_pe;
         end
 
         counter = updateRewardLossCounter(s, o);
 
         rewardLossCounter = rewardLossCounter + counter;
+        Omega = Omega + ep*(abs(v_pe)-abs(q_pe) - Omega);
+
     end
    
     M = rewardLossCounter/(T/2);
@@ -141,9 +160,14 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
                 isRewarded = avoidedVec(t);
             end
                 
-            w_g(s) = q_g(s) + goBias + (1-omega)*sv(s);
-            w_ng(s) = q_ng(s);
-            p1 = stableSoftmax(w_g(s), w_ng(s));
+            if t==1
+                w_g(s) = q_g(s) + goBias + sv(s)/(betaControl+betaOmega*Omega);
+                w_ng(s) = q_ng(s) + (-sv(s))/(betaControl+betaOmega*Omega);
+            else
+                w_g(s) = q_g(s) + goBias + (sv(s)/(betaControl+betaOmega*Omega))+persist_flip(actions(b, t-1))*betaPersist;
+                w_ng(s) = q_ng(s) + ((-sv(s))/(betaControl+betaOmega*Omega))-persist_flip(actions(b, t-1))*betaPersist;
+            end
+            p1 = (epsilon/2) + (1-epsilon)*stableSoftmax(w_g(s), w_ng(s));
 
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
@@ -158,19 +182,25 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
                 svs(b, t) = sv(s);
                 qs(b, t) = q_g(s);
             end
+            v_pe = rho*o - sv(s);
+            sv(s) = sv(s) + ep * v_pe;
+
             if a==1
                 loglik = loglik + log(p1 + eps);
 
                 pe = rho * o - q_g(s);
-                q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
+                q_pe = rho*o-q_g(s);
+                q_g(s) = q_g(s) + ep * q_pe;
             elseif a==2
                 loglik = loglik + log((1-p1) + eps);
 
                 pe = rho * o - q_ng(s);
-                q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+                q_pe = rho*o-q_ng(s);
+                q_ng(s) = q_ng(s) + ep * q_pe;
             end
             
             arr = arr + (o - arr);
+            Omega = Omega + ep*(abs(v_pe)-abs(q_pe) - Omega);
 
             if isHC
                 HCcell{hc, s}(end+1) = p1;

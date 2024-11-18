@@ -1,12 +1,17 @@
-function [out] = ChemControl_mod3_modSim(parameters, subj)
+function [out] = ChemControl_mod87_modSim(parameters, subj)
     % Standard Q-learning model with delta learning rule.
     
     % ----------------------------------------------------------------------- %
-    %% Retrieve parameters:
-    ep = sigmoid(parameters(1));
-    rho = exp(parameters(2));
-    goBias = parameters(3);
-    omega = parameters(4);
+    % Unpack parameters
+    % Parameter Transformation
+    bt = exp(parameters(1));         % Inverse temperature
+    mq = sigmoid(parameters(2));     % Prior mean instrumental
+    pq = exp(parameters(3));        % Prior confidence instrumental
+    mv = sigmoid(parameters(4));     % Prior mean Pavlovian
+    pv = exp(parameters(5));        % Prior confidence Pavlovian
+    w0 = sigmoid(parameters(6));     % Initial Pavlovian weight (log odds)
+
+
     % ----------------------------------------------------------------------- %
     %% Unpack data:
 
@@ -41,21 +46,25 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
 
     actions = zeros(B, T);
     outcomes = zeros(B, T);
-        svs = zeros(B, T);
+
+    unique_states = unique(states);
+    S = 4;
+    Q = zeros(S, 2) + mq;          % Q(s,1) and Q(s,2)
+    V = zeros(S, 1) + mv;           % V(s)
+    Mq = ones(S, 2) * pq;
+    Mv = ones(S, 1) * pv;
+
+    svs = zeros(B, T);
     qs = zeros(B, T);
-    q0 = [0 0 0 0];
     hc = 0;
     lc = 0;
     yc = 0;
 
     %% Run calibration block
     rewardLossCounter = zeros([1, 2]);
-    q_g = q0;
-    q_ng = q0;
-    w_g = q0;
-    w_ng = q0;
-    sv = [0.5 -0.5 0.5 -0.5];
     loglik = 0;
+    L = log(w0 + eps) - log(1 - w0 + eps); % can be reset every block or only once at the beginning
+
 
     isHC = 1;
     for t = 1:T
@@ -64,28 +73,37 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
         randLC = cali_randLC(t);
         isRewarded = cali_randRewards(t);
 
-        w_g(s) = q_g(s) + goBias + (1-omega)*sv(s);
-        w_ng(s) = q_ng(s);
-        p1 = stableSoftmax(w_g(s), w_ng(s));
+        w = 1 ./ (1 + exp(-L));
+        d = (1 - w) * Q(s, 1) - (1 - w) * Q(s, 2) - w * V(s);
+        P = 1 ./ (1 + exp(-bt * d));
 
-        a = returnAction(p1);
+        a = returnAction(P);
         o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
         
-        if mod(s, 2) && o == 0
-            o = -1;
-        elseif ~mod(s, 2) && o == 0
+        if ~mod(s, 2) && o == 0
             o = 1;
+        elseif ~mod(s, 2) && o == -1
+            o = 0;
         end
+        if o == 1
+            L = L + log(V(s) + eps) - log(Q(s, a) + eps);
+        else
+          
+            L = L + log(1 - V(s) + eps) - log(1 - Q(s, a) + eps);
+        end
+
         if a==1
-            loglik = loglik + log(p1 + eps);
+            loglik = loglik + log(P +eps);
 
-            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
-            loglik = loglik + log((1-p1) + eps);
+            loglik = loglik + log((1-P) + eps);
 
-            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
-
+        Mv(s) = Mv(s) + 1;
+        Mq(s, a) = Mq(s, a) + 1;
+        V(s) = V(s) + (o - V(s)) / Mv(s);
+        Q(s, a) = Q(s, a) + (o - Q(s, a)) / Mq(s, a);
+        
         counter = updateRewardLossCounter(s, o);
 
         rewardLossCounter = rewardLossCounter + counter;
@@ -122,14 +140,12 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
         lc = lc + isLC;
         yc = yc + isYoked;
 
-        q_g = q0;
-        q_ng = q0;
-        w_g = q0;
-        w_ng = q0;
-
         arr = 0;
+        L = log(w0 + eps) - log(1 - w0 + eps); % can be reset every block or only once at the beginning
+
         for t = 1:T
             s = stimuli(b, t);
+            omegas(b, t) = L;
             isWinState = mod(s, 2);
             randHC = randHCs(b, t); % outcome matters (1, 0, 2)
             randLC = randLCs(b, t); % outcome doesn't matter (1, 0, 2)
@@ -140,37 +156,48 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
             elseif ~isWinState && isYoked
                 isRewarded = avoidedVec(t);
             end
-                
-            w_g(s) = q_g(s) + goBias + (1-omega)*sv(s);
-            w_ng(s) = q_ng(s);
-            p1 = stableSoftmax(w_g(s), w_ng(s));
+            w = 1 ./ (1 + exp(-L));
+            d = (1 - w) * Q(stim, 1) - (1 - w) * Q(stim, 2) - w * V(stim);
+            P = 1 ./ (1 + exp(-bt * d));
 
             a = returnAction(p1);
             o = returnReward(s, a, isHC, randLC, randHC, isRewarded);
             actions(b, t) = a;
             outcomes(b, t) = o;
-            if mod(s, 2) && o == 0
-                o = -1;
-            elseif ~mod(s, 2) && o == 0
+            if ~mod(s, 2) && o == 0
                 o = 1;
+            elseif ~mod(s, 2) && o == -1
+                o = 0;
             end
             if s == 1
-                svs(b, t) = sv(s);
-                qs(b, t) = q_g(s);
+                svs(b, t) = V(s);
+                qs(b, t) = Q(s, a);
             end
-            if a==1
-                loglik = loglik + log(p1 + eps);
-
-                pe = rho * o - q_g(s);
-                q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
-            elseif a==2
-                loglik = loglik + log((1-p1) + eps);
-
-                pe = rho * o - q_ng(s);
-                q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
+            if mod(s, 2)
+                p_g = 1;
+            else
+                p_g = -1;
+            end
+    
+            v_pe = p_g - sv(s);
+            sv(s) = sv(s) + ep * v_pe;
+        
+            if a == 1  % Go
+                loglik = loglik + log(P + eps);
+            else      % NoGo
+                loglik = loglik + log(1 - P + eps);
+            end
+            if o == 1
+               
+                L = L + log(V(s) + eps) - log(Q(s, a) + eps);
+            else
+              
+                L = L + log(1 - V(s) + eps) - log(1 - Q(s, a) + eps);
             end
             
             arr = arr + (o - arr);
+            Omega = Omega + (alpha*p_explore)*(abs(v_pe)-abs(q_pe) - Omega);
+            omega = 1/(1+exp(-beta*(Omega-thres)));
 
             if isHC
                 HCcell{hc, s}(end+1) = p1;
@@ -458,6 +485,7 @@ function [out] = ChemControl_mod3_modSim(parameters, subj)
     out.plotReward = plotReward;
     out.arr = averageRewardRate;
     out.alr = averageLossRate;
+    out.omegas = omegas;
     out.probShiftAfterLoss_HC = probShiftAfterLoss_HC;
     out.probShiftAfterLoss_LC = probShiftAfterLoss_LC;
     out.probShiftAfterLoss_YC = probShiftAfterLoss_YC;

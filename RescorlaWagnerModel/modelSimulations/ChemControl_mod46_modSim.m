@@ -46,7 +46,8 @@ function [out] = ChemControl_mod46_modSim(parameters, subj)
     actions = zeros(B, T);
     outcomes = zeros(B, T);
     omegasStim = zeros(B, T, S);
-
+    svs = zeros(B, T);
+    qs = zeros(B, T);
     q0 = [0 0 0 0];
     hc = 0;
     lc = 0;
@@ -179,6 +180,10 @@ function [out] = ChemControl_mod46_modSim(parameters, subj)
                 o = -1;
             elseif ~mod(s, 2) && o == 0
                 o = 1;
+            end
+            if s == 1
+                svs(b, t) = sv(s);
+                qs(b, t) = q_g(s);
             end
             mu = mu + alpha_lr*(rho*o-mu);
 
@@ -500,4 +505,6 @@ function [out] = ChemControl_mod46_modSim(parameters, subj)
     out.weightedProbShiftAfterLoss_YC = weightedProbShiftAfterLoss_YC;
     out.loglik = loglik;
 
+    out.svs = svs;
+    out.qs = qs;
 end

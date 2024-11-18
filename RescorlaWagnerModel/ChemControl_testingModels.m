@@ -42,7 +42,7 @@ dataType = 'allData';
 
 parType = 'lap';
 selMod = 1;
-selMods = [59];
+selMods = [3, 80, 81, 82, 83, 84, 85, 86];
 
 fname_mod = cell(nMod, 1);
 
@@ -315,8 +315,12 @@ if ~isempty(omegas)
 end
 
 % Plot the average Omegas for the first schedule in stimulus indepedent
-if ~isempty(omegasStim)
+if any(omegasStim)
     plotOmegasStim(allOmegaStim, cPs, modelsWithOmegasStim)
+end
+
+if ~isempty(averageQs)
+    plotQsandSvs(averageQs, averageSvs, cPs, modelsWithQs)
 end
 % % Plot the average Omegas
 % figure(fig10);

@@ -45,7 +45,7 @@ if ~exist(dirs.stan_models, 'dir'); mkdir(dirs.stan_models); end
 % ----------------------------------------------------------------------- %
 %% 00b) Settings:
 nMod = length(dir(fullfile(dirs.models, "*.m")));
-selMods = [3, 72, 73];
+selMods = [3, 87];
 %selMods = [1:6];
 fprintf('Fit %d models\n', length(selMods));
 
@@ -144,6 +144,20 @@ priors{70} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
 priors{71} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
 priors{72} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
 priors{73} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{74} = struct('mean', [0 2 0 0 2], 'variance', [3 5 10 3 5]);
+priors{75} = struct('mean', [0 2 0 0 2 2], 'variance', [3 5 10 3 5 5]);
+priors{76} = struct('mean', [0 2 0 0 2 2 0], 'variance', [3 5 10 3 5 5 10]);
+priors{77} = struct('mean', [0 2 0 0 2], 'variance', [3 5 10 3 5]);
+priors{78} = struct('mean', [0 2 0 0 2 2], 'variance', [3 5 10 3 5 5]);
+priors{79} = struct('mean', [0 2 0 0 2 2 0], 'variance', [3 5 10 3 5 5 10]);
+priors{80} = struct('mean', [0 0 0 2 0], 'variance', [3 10 3 5 3]);
+priors{81} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{82} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{83} = struct('mean', [0 0 2 0 0 2 0], 'variance', [3 3 5 10 3 5 3]);
+priors{84} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{85} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{86} = struct('mean', [0 2 0 0 2 0], 'variance', [3 5 10 3 5 3]);
+priors{87} = struct('mean', [2 0 2 0 2 0], 'variance', [5 3 5 3 5 3]);
 
 % Output names:
 fprintf("Initialize output file names\n")
