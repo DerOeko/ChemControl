@@ -42,7 +42,7 @@ dataType = 'allData';
 
 parType = 'lap';
 selMod = 1;
-selMods = [3, 80, 81, 82, 83, 84, 85, 86];
+selMods = 1:nMod;
 
 fname_mod = cell(nMod, 1);
 
@@ -173,6 +173,8 @@ schedule_counter = 0;
 % 02b) Run simulation and plot
 for iMod = 1:length(selMods)
     idx = selMods(iMod);
+    fprintf("Running simulation for model %i\n", idx)
+
     parameters = groupParams{iMod};
     i = i+1;
     % Test

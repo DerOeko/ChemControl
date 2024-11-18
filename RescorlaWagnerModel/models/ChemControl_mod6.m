@@ -1,18 +1,16 @@
-function [loglik] = ChemControl_mod13(parameters,subj)
+function [loglik] = ChemControl_mod6(parameters,subj)
 
-% Proposal Romain 09/10
-% Same as target with perseveration/alternation parameter
-
+% Standard Q learning model with rho feedback sensitivity
+% + GoBias
+% + DynamicPavlovianBias
+% + Initial Optimism
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
 rho = exp(parameters(2));
 goBias = parameters(3);
-epsilon = sigmoid(parameters(4));
-betaControl = exp(parameters(5));
-betaOmega = exp(parameters(6));
-betaPersist = parameters(7);
-
+omega = sigmoid(parameters(4));
+initialOptimism=sigmoid(parameters(5));
 % ----------------------------------------------------------------------- %
 
 %% Unpack data:
@@ -39,54 +37,36 @@ initQ = [0 0 0 0];
 
 loglik = 0;
 
-persist_flip=[1,-1]
-
 % Store actions, outcomes and stimuli
 
 % ----------------------------------------------------------------------- %
 %% Calculating log likelihood for action sequence with this model:
-Omega = 0;
 
 for b = 1:B
     w_g = initQ;
     w_ng = initQ;
     q_g = initQ;
     q_ng = initQ;
-    sv = [0.5 -0.5 0.5 -0.5];
+    sv = [initialOptimism 1-initialOptimism initialOptimism 1-initialOptimism];
 
     for t=1:T
-
         a = actions(b, t);
         o = outcomes(b, t);
         s = states(b, t);
 
-        if t==1
-            w_g(s) = q_g(s) + goBias + sv(s)/(betaControl+betaOmega*Omega);
-            w_ng(s) = q_ng(s) + (-sv(s))/(betaControl+betaOmega*Omega);
-        else
-            w_g(s) = q_g(s) + goBias + (sv(s)/(betaControl+betaOmega*Omega))+persist_flip(actions(b, t-1))*betaPersist;
-            w_ng(s) = q_ng(s) + ((-sv(s))/(betaControl+betaOmega*Omega))-persist_flip(actions(b, t-1))*betaPersist;
-    
-            
-        p1 = (epsilon/2) + (1-epsilon)*stableSoftmax(w_g(s), w_ng(s));
+        w_g(s) = q_g(s) + goBias + (1-omega) * sv(s); % Here, we assume a fixed influence of pavlovian bias on the probability of go. People are less likely to go in Avoid trials.
+        w_ng(s) = q_ng(s);
+        p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
 
-        v_pe = rho*o - sv(s);
-
-        sv(s) = sv(s) + ep * v_pe;
-        
         if a==1
             loglik = loglik + log(p1 + eps);
-            q_pe = rho*o-q_g(s);
-            q_g(s) = q_g(s) + ep * q_pe;
+            q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
         elseif a==2
             loglik = loglik + log(p2 + eps);
-            q_pe = rho*o-q_ng(s);
-            q_ng(s) = q_ng(s) + ep * q_pe;
+            q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
         end
-
-        Omega = Omega + ep*(abs(v_pe)-abs(q_pe) - Omega);
-        omega = betaOmega*Omega
     end
 end
 end

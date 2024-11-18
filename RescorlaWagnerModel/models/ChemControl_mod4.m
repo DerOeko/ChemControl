@@ -1,15 +1,14 @@
-function [loglik] = ChemControl_mod67(parameters,subj)
+function [loglik] = ChemControl_mod4(parameters,subj)
 
-% Dynamic Omega, dynamic pavlov, p_explore, competitive, rescaled PEs, mu,
-% continuous
+% Standard Q learning model with rho feedback sensitivity
+% + GoBias
+% + DynamicPavlovianBias
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
 rho = exp(parameters(2));
 goBias = parameters(3);
-alpha = sigmoid(parameters(4));
-beta = exp(parameters(5));
-thres = scaledSigmoid(parameters(6));
+omega = sigmoid(parameters(4));
 % ----------------------------------------------------------------------- %
 
 %% Unpack data:
@@ -40,7 +39,6 @@ loglik = 0;
 
 % ----------------------------------------------------------------------- %
 %% Calculating log likelihood for action sequence with this model:
-Omega = 0;
 
 for b = 1:B
     w_g = initQ;
@@ -48,34 +46,26 @@ for b = 1:B
     q_g = initQ;
     q_ng = initQ;
     sv = [0.5 -0.5 0.5 -0.5];
-    omega = 1/(1+exp(-beta*(Omega-thres)));
 
     for t=1:T
         a = actions(b, t);
         o = outcomes(b, t);
         s = states(b, t);
-        w_g(s) = q_g(s) + goBias + (1-omega) * sv(s);
+
+        w_g(s) = q_g(s) + goBias + (1-omega) * sv(s); % Here, we assume a fixed influence of pavlovian bias on the probability of go. People are less likely to go in Avoid trials.
         w_ng(s) = q_ng(s);
         p1 = stableSoftmax(w_g(s), w_ng(s));
         p2 = 1-p1;
+        
+        sv(s) = sv(s) + ep * (rho * o - sv(s));
 
         if a==1
             loglik = loglik + log(p1 + eps);
-            q_pe = o-q_g(s)/rho;
-
             q_g(s) = q_g(s) + ep * (rho * o - q_g(s));
-            p_explore = p2;
-
         elseif a==2
             loglik = loglik + log(p2 + eps);
-
-            q_pe = o-q_ng(s)/rho;
             q_ng(s) = q_ng(s) + ep * (rho * o - q_ng(s));
-            p_explore = p1;
         end
-
-        Omega = Omega + (alpha*p_explore)*(abs(q_pe) - Omega);
-        omega = 1/(1+exp(-beta*(Omega-thres)));
     end
 end
 end

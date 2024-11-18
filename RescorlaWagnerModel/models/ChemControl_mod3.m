@@ -1,13 +1,14 @@
 function [loglik] = ChemControl_mod3(parameters,subj)
 
-% Standard Rescorla Wagner model with rho feedback sensitivity + goBias +
-% fixed controllability estimate + non competitive
+% Standard Q learning model with rho feedback sensitivity
+% + GoBias
+% + FixedPavlovianBias
 % ----------------------------------------------------------------------- %
 %% Retrieve parameters:
 ep = sigmoid(parameters(1));
 rho = exp(parameters(2));
 goBias = parameters(3);
-omega = parameters(4);
+omega = sigmoid(parameters(4));
 % ----------------------------------------------------------------------- %
 
 %% Unpack data:
